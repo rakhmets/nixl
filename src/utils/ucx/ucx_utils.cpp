@@ -44,6 +44,8 @@ nixl_status_t ucx_status_to_nixl(ucs_status_t status)
         return NIXL_ERR_REMOTE_DISCONNECT;
     case UCS_ERR_INVALID_PARAM:
         return NIXL_ERR_INVALID_PARAM;
+    case UCS_ERR_BUSY:
+        return NIXL_ERR_BUSY;
     default:
         NIXL_WARN << "Unexpected UCX error: " << ucs_status_string(status);
         return NIXL_ERR_BACKEND;
@@ -339,7 +341,6 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
                                nixlUcxContext::req_cb_t init_cb,
                                nixlUcxContext::req_cb_t fini_cb,
                                bool prog_thread,
-                               ucp_err_handling_mode_t __err_handling_mode,
                                unsigned long num_workers,
                                nixl_thread_sync_t sync_mode)
 {
@@ -353,7 +354,6 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
     // irrespective of nixlAgent synchronization model.
     mt_type = (sync_mode == nixl_thread_sync_t::NIXL_THREAD_SYNC_RW || prog_thread) ?
         nixl_ucx_mt_t::WORKER : nixl_ucx_mt_t::SINGLE;
-    err_handling_mode = __err_handling_mode;
 
     ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_MT_WORKERS_SHARED;
     ucp_params.features = UCP_FEATURE_RMA | UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64 | UCP_FEATURE_AM;
@@ -439,7 +439,7 @@ namespace
 
 }  // namespace
 
-ucp_worker* nixlUcxWorker::createUcpWorker(nixlUcxContext& ctx)
+ucp_worker* nixlUcxWorker::createUcpWorker(const nixlUcxContext& ctx)
 {
     ucp_worker* worker = nullptr;
     const nixlUcpWorkerParams params(ctx.mt_type);
@@ -453,9 +453,9 @@ ucp_worker* nixlUcxWorker::createUcpWorker(nixlUcxContext& ctx)
     return worker;
 }
 
-nixlUcxWorker::nixlUcxWorker(const std::shared_ptr< nixlUcxContext >&_ctx)
-    : ctx(_ctx),
-      worker(createUcpWorker(*ctx), &ucp_worker_destroy)
+nixlUcxWorker::nixlUcxWorker(const nixlUcxContext& ctx, ucp_err_handling_mode_t err_handling_mode)
+    : worker(createUcpWorker(ctx), &ucp_worker_destroy)
+    , err_handling_mode_(err_handling_mode)
 {}
 
 std::string nixlUcxWorker::epAddr()
@@ -476,7 +476,7 @@ std::string nixlUcxWorker::epAddr()
 absl::StatusOr<std::unique_ptr<nixlUcxEp>> nixlUcxWorker::connect(void* addr, std::size_t size)
 {
     try {
-        return std::make_unique<nixlUcxEp>(worker.get(), addr, ctx->err_handling_mode);
+        return std::make_unique<nixlUcxEp>(worker.get(), addr, err_handling_mode_);
     } catch (const std::exception &e) {
         return absl::UnavailableError(e.what());
     }
@@ -582,4 +582,18 @@ void nixlUcxWorker::reqRelease(nixlUcxReq req)
 void nixlUcxWorker::reqCancel(nixlUcxReq req)
 {
     ucp_request_cancel(worker.get(), req);
+}
+
+nixl_status_t nixlUcxWorker::arm()
+{
+    return ucx_status_to_nixl(ucp_worker_arm(worker.get()));
+}
+
+nixl_status_t nixlUcxWorker::getEfd(int &fd)
+{
+    const auto status = ucp_worker_get_efd(worker.get(), &fd);
+    if (status != UCS_OK) {
+        NIXL_ERROR << "Couldn't obtain fd for a worker, status: " << ucs_status_string(status);
+    }
+    return ucx_status_to_nixl(status);
 }
