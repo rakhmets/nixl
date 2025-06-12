@@ -26,6 +26,7 @@
 #include "serdes/serdes.h"
 
 #include "ucx_utils.h"
+#include "ucx_config.h"
 #include "common/nixl_log.h"
 
 using namespace std;
@@ -344,7 +345,6 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
                                nixl_thread_sync_t sync_mode)
 {
     ucp_params_t ucp_params;
-    ucp_config_t *ucp_config;
     ucs_status_t status = UCS_OK;
 
     // With strict synchronization model nixlAgent serializes access to backends, with more
@@ -376,32 +376,34 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
         ucp_params.field_mask |= UCP_PARAM_FIELD_REQUEST_CLEANUP;
     }
 
-    ucp_config_read(NULL, NULL, &ucp_config);
+    std::optional<nixl::UcxConfig> ucx_config;
+    try {
+        ucx_config.emplace();
+    } catch (const std::exception &e) {
+        NIXL_ERROR << "Failed to create UCX config: " << e.what();
+        return;
+    }
 
     /* If requested, restrict the set of network devices */
     if (devs.size()) {
         /* TODO: check if this is the best way */
-        string dev_str = "";
+        string dev_str;
         unsigned int i;
-        for(i=0; i < devs.size() - 1; i++) {
+        for (i=0; i < devs.size() - 1; i++) {
             dev_str = dev_str + devs[i] + ":1,";
         }
         dev_str = dev_str + devs[i] + ":1";
-        ucp_config_modify(ucp_config, "NET_DEVICES", dev_str.c_str());
+        ucx_config->modify("NET_DEVICES", dev_str.c_str());
     }
 
-    status = ucp_config_modify(ucp_config, "MAX_RMA_RAILS", "2");
-    if (status != UCS_OK) {
-        NIXL_WARN << "Failed to modify MAX_RMA_RAILS: " << ucs_status_string(status);
-    }
+    ucx_config->modify("MAX_RMA_RAILS", "2");
 
-    status = ucp_init(&ucp_params, ucp_config, &ctx);
+    status = ucp_init(&ucp_params, ucx_config->get(), &ctx);
     if (status != UCS_OK) {
         /* TODO: proper cleanup */
         // TODO: MSW_NET_ERROR(priv->net, "failed to ucp_init(%s)\n", ucs_status_string(status));
         return;
     }
-    ucp_config_release(ucp_config);
 }
 
 nixlUcxContext::~nixlUcxContext()
