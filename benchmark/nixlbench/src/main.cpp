@@ -30,7 +30,7 @@
 #include <memory>
 #include <csignal>
 
-XferBenchConfig xfer_bench_config;
+xferBenchConfig xfer_bench_config;
 
 static std::pair<size_t, size_t> getStrideScheme(xferBenchWorker &worker, int num_threads) {
     int initiator_device, target_device;
@@ -162,7 +162,7 @@ static std::unique_ptr<xferBenchWorker> createWorker(int *argc, char ***argv) {
             return nullptr;
         }
         return std::make_unique<xferBenchNixlWorker>(argc, argv, devices);
-    } else if (xferBenchConfig.worker_type == "nvshmem") {
+    } else if (xfer_bench_config.workerType == "nvshmem") {
 #if HAVE_NVSHMEM && HAVE_CUDA
         return std::make_unique<xferBenchNvshmemWorker>(argc, argv);
 #else

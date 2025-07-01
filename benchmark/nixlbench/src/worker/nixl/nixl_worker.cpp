@@ -113,13 +113,13 @@ xferBenchNixlWorker::xferBenchNixlWorker(int *argc, char ***argv, std::vector<st
         if (devices[0] != "all" && devices.size() >= 1) {
             if (isInitiator()) {
                 backend_params["device_list"] = devices[rank];
-                if (0 == xferBenchConfig.backend.compare(XFERBENCH_BACKEND_UCX_MO)) {
-                    backend_params["num_ucx_engines"] = xferBenchConfig.num_initiator_dev;
+                if (0 == xfer_bench_config.backend.compare(XFERBENCH_BACKEND_UCX_MO)) {
+                    backend_params["num_ucx_engines"] = xfer_bench_config.numInitiatorDev;
                 }
             } else {
-                backend_params["device_list"] = devices[rank - xferBenchConfig.num_initiator_dev];
-                if (0 == xferBenchConfig.backend.compare(XFERBENCH_BACKEND_UCX_MO)) {
-                    backend_params["num_ucx_engines"] = xferBenchConfig.num_target_dev;
+                backend_params["device_list"] = devices[rank - xfer_bench_config.numInitiatorDev];
+                if (0 == xfer_bench_config.backend.compare(XFERBENCH_BACKEND_UCX_MO)) {
+                    backend_params["num_ucx_engines"] = xfer_bench_config.numTargetDev;
                 }
             }
         }
@@ -297,7 +297,7 @@ static std::optional<xferBenchIOV> getVramDesc(int devid, size_t buffer_size,
     uint8_t memset_value = isInit ? XFERBENCH_INITIATOR_BUFFER_ELEMENT :
                                     XFERBENCH_TARGET_BUFFER_ELEMENT;
 
-    if (xferBenchConfig.enable_vmm) {
+    if (xfer_bench_config.enableVmm) {
         return getVramDescCudaVmm(devid, buffer_size, memset_value);
     } else {
         return getVramDescCuda(devid, buffer_size, memset_value);
@@ -309,7 +309,7 @@ std::optional<xferBenchIOV> xferBenchNixlWorker::initBasicDescVram(size_t buffer
         int devid = rt->getRank();
 
         if (isTarget()) {
-            devid -= xferBenchConfig.num_initiator_dev;
+            devid -= xfer_bench_config.numInitiatorDev;
         }
 
         if (devid != mem_dev_id) {
@@ -390,7 +390,7 @@ void xferBenchNixlWorker::cleanupBasicDescDram(xferBenchIOV &iov) {
 void xferBenchNixlWorker::cleanupBasicDescVram(xferBenchIOV &iov) {
     CHECK_CUDA_ERROR(cudaSetDevice(iov.devId), "Failed to set device");
 
-    if (xferBenchConfig.enable_vmm) {
+    if (xfer_bench_config.enableVmm) {
         CHECK_CUDA_DRIVER_ERROR(cuMemUnmap(iov.addr, iov.len),
                                 "Failed to unmap memory");
         CHECK_CUDA_DRIVER_ERROR(cuMemRelease(iov.handle),

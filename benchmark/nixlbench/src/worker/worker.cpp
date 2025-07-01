@@ -22,20 +22,20 @@
 #include <unistd.h>
 
 static xferBenchRT *createRT(int *terminate) {
-    if (XFERBENCH_RT_ETCD == xferBenchConfig.runtime_type) {
+    if (XFERBENCH_RT_ETCD == xfer_bench_config.runtimeType) {
         int total = 2;
-        if (XFERBENCH_MODE_SG == xferBenchConfig.mode) {
-            total = xferBenchConfig.num_initiator_dev +
-                xferBenchConfig.num_target_dev;
+        if (XFERBENCH_MODE_SG == xfer_bench_config.mode) {
+            total = xfer_bench_config.numInitiatorDev +
+                xfer_bench_config.numTargetDev;
         }
-        if ((XFERBENCH_BACKEND_GDS == xferBenchConfig.backend) ||
-            (XFERBENCH_BACKEND_POSIX == xferBenchConfig.backend)) {
+        if ((XFERBENCH_BACKEND_GDS == xfer_bench_config.backend) ||
+            (XFERBENCH_BACKEND_POSIX == xfer_bench_config.backend)) {
             total = 1;
         }
-        return new xferBenchEtcdRT(xferBenchConfig.etcd_endpoints, total, terminate);
+        return new xferBenchEtcdRT(xfer_bench_config.etcdEndpoints, total, terminate);
     }
 
-    std::cerr << "Invalid runtime: " << xferBenchConfig.runtime_type << std::endl;
+    std::cerr << "Invalid runtime: " << xfer_bench_config.runtimeType << std::endl;
     exit(EXIT_FAILURE);
 }
 
@@ -54,13 +54,13 @@ xferBenchWorker::xferBenchWorker(int *argc, char ***argv) {
 
     int rank = rt->getRank();
 
-    if (XFERBENCH_MODE_SG == xferBenchConfig.mode) {
-        if (rank >= 0 && rank < xferBenchConfig.num_initiator_dev) {
+    if (XFERBENCH_MODE_SG == xfer_bench_config.mode) {
+        if (rank >= 0 && rank < xfer_bench_config.numInitiatorDev) {
             name = "initiator";
         } else {
             name = "target";
         }
-    } else if (XFERBENCH_MODE_MG == xferBenchConfig.mode) {
+    } else if (XFERBENCH_MODE_MG == xfer_bench_config.mode) {
         if (0 == rank) {
             name = "initiator";
         } else {
