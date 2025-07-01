@@ -97,7 +97,8 @@ xferBenchNixlWorker::xferBenchNixlWorker(int *argc, char ***argv, std::vector<st
         0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_UCX_MO) ||
         0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_GDS) ||
         0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_POSIX) ||
-        0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_GPUNETIO)) {
+        0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_GPUNETIO) ||
+        0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_MOONCAKE)) {
         backend_name = xfer_bench_config.backend;
     } else {
         std::cerr << "Unsupported backend: " << xfer_bench_config.backend << std::endl;
@@ -153,6 +154,8 @@ xferBenchNixlWorker::xferBenchNixlWorker(int *argc, char ***argv, std::vector<st
         std::cout << "GPUNETIO backend, network device " << devices[0] << " GPU device " << xfer_bench_config.gpunetioDeviceList << std::endl;
         backend_params["network_devices"] = devices[0];
         backend_params["gpu_devices"] = xfer_bench_config.gpunetioDeviceList;
+    } else if (0 == xfer_bench_config.backend.compare (XFERBENCH_BACKEND_MOONCAKE)) {
+        std::cout << "Mooncake backend" << std::endl;
     } else {
         std::cerr << "Unsupported backend: " << xfer_bench_config.backend << std::endl;
         exit(EXIT_FAILURE);
@@ -687,6 +690,9 @@ static int execTransfer(nixlAgent *agent,
             target = "initiator";
         } else if (XFERBENCH_BACKEND_POSIX == xfer_bench_config.backend) {
             target = "initiator";
+        } else if (XFERBENCH_BACKEND_MOONCAKE == xfer_bench_config.backend) {
+            params.hasNotif = false;
+            target = "target";
         } else {
             params.notifMsg = "0xBEEF";
             params.hasNotif = true;
@@ -757,11 +763,13 @@ std::variant<double, int> xferBenchNixlWorker::transfer(size_t block_size,
     total_duration += (((t_end.tv_sec - t_start.tv_sec) * 1e6) +
                        (t_end.tv_usec - t_start.tv_usec)); // In us
 
+    synchronize();
     return ret < 0 ? std::variant<double, int>(ret) : std::variant<double, int>(total_duration);
 }
 
 void xferBenchNixlWorker::poll(size_t block_size) {
     nixl_notifs_t notifs;
+    nixl_status_t status;
     int skip = 0, num_iter = 0, total_iter = 0;
 
     skip = xfer_bench_config.warmupIter;
@@ -774,15 +782,16 @@ void xferBenchNixlWorker::poll(size_t block_size) {
     total_iter = skip + num_iter;
 
     /* Ensure warmup is done*/
-    while (skip != int(notifs["initiator"].size())) {
-        agent->getNotifs(notifs);
-    }
+    do {
+        status = agent->getNotifs (notifs);
+    } while (status == NIXL_SUCCESS && skip != int (notifs["initiator"].size()));
     synchronize();
 
     /* Polling for actual iterations*/
-    while (total_iter != int(notifs["initiator"].size())) {
-        agent->getNotifs(notifs);
-    }
+    do {
+        status = agent->getNotifs (notifs);
+    } while (status == NIXL_SUCCESS && total_iter != int (notifs["initiator"].size()));
+    synchronize();
 }
 
 int xferBenchNixlWorker::synchronizeStart() {
