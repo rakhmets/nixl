@@ -126,11 +126,11 @@ struct xferBenchConfig {
     bool enable_pt{false};
     std::string device_list;
     std::string etcd_endpoints;
-    std::string gds_file_path;
+    std::string gds_filepath;
     bool enable_vmm{false};
     int num_files{0};
     std::string posix_api_type;
-    std::string posix_file_path;
+    std::string posix_filepath;
     bool storage_enable_direct{false};
     int gds_batch_pool_size{0};
     int gds_batch_limit{0};

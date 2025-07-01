@@ -334,12 +334,12 @@ static std::vector<int> createFileFds(std::string name, bool is_gds) {
         flags |= O_DIRECT;
     }
     if (is_gds) {
-        file_path = xfer_bench_config.gds_file_path != "" ? xfer_bench_config.gds_file_path :
-                                                          std::filesystem::current_path().string();
+        file_path = xfer_bench_config.gds_filepath != "" ? xfer_bench_config.gds_filepath :
+                                                           std::filesystem::current_path().string();
         file_name_prefix = "/nixlbench_gds_test_file_";
     } else {  // POSIX
-        file_path = xfer_bench_config.posix_file_path != "" ?
-            xfer_bench_config.posix_file_path :
+        file_path = xfer_bench_config.posix_filepath != "" ?
+            xfer_bench_config.posix_filepath :
             std::filesystem::current_path().string();
         file_name_prefix = "/nixlbench_posix_test_file_";
     }

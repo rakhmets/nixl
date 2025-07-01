@@ -107,7 +107,7 @@ xferBenchConfig::loadFromFlags() {
 
         // Load GDS-specific configurations if backend is GDS
         if (backend == XFERBENCH_BACKEND_GDS) {
-            gds_file_path = FLAGS_gds_filepath;
+            gds_filepath = FLAGS_gds_filepath;
             gds_batch_pool_size = FLAGS_gds_batch_pool_size;
             gds_batch_limit = FLAGS_gds_batch_limit;
             num_files = FLAGS_num_files;
@@ -117,7 +117,7 @@ xferBenchConfig::loadFromFlags() {
         // Load POSIX-specific configurations if backend is POSIX
         if (backend == XFERBENCH_BACKEND_POSIX) {
             posix_api_type = FLAGS_posix_api_type;
-            posix_file_path = FLAGS_posix_filepath;
+            posix_filepath = FLAGS_posix_filepath;
             storage_enable_direct = FLAGS_storage_enable_direct;
             num_files = FLAGS_num_files;
 
@@ -155,7 +155,7 @@ xferBenchConfig::loadFromFlags() {
     etcd_endpoints = FLAGS_etcd_endpoints;
     num_files = FLAGS_num_files;
     posix_api_type = FLAGS_posix_api_type;
-    posix_file_path = FLAGS_posix_filepath;
+    posix_filepath = FLAGS_posix_filepath;
     storage_enable_direct = FLAGS_storage_enable_direct;
 
     if (worker_type == XFERBENCH_WORKER_NVSHMEM) {
@@ -247,7 +247,7 @@ xferBenchConfig::printConfig() const {
         // Print GDS options if backend is GDS
         if (backend == XFERBENCH_BACKEND_GDS) {
             std::cout << std::left << std::setw(60) << "GDS filepath (--gds_filepath=path)" << ": "
-                      << gds_file_path << std::endl;
+                      << gds_filepath << std::endl;
             std::cout << std::left << std::setw(60) << "GDS batch pool size (--gds_batch_pool_size=N)" << ": "
                       << gds_batch_pool_size << std::endl;
             std::cout << std::left << std::setw(60) << "GDS batch limit (--gds_batch_limit=N)" << ": "
@@ -263,7 +263,7 @@ xferBenchConfig::printConfig() const {
             std::cout << std::left << std::setw(60) << "POSIX API type (--posix_api_type=[AIO,URING])" << ": "
                       << posix_api_type << std::endl;
             std::cout << std::left << std::setw(60) << "POSIX filepath (--posix_filepath=path)" << ": "
-                      << posix_file_path << std::endl;
+                      << posix_filepath << std::endl;
             std::cout << std::left << std::setw(60) << "POSIX enable direct (--storage_enable_direct=[0,1])" << ": "
                       << storage_enable_direct << std::endl;
             std::cout << std::left << std::setw(60) << "Number of files (--num_files=N)" << ": "
