@@ -34,14 +34,14 @@
 xferBenchNvshmemWorker::xferBenchNvshmemWorker(int *argc, char ***argv): xferBenchWorker(argc, argv) {
     // Initialize NVSHMEM
     if (XFERBENCH_RT_ETCD == xfer_bench_config.runtime_type) {
-	    rank = rt->getRank();
-	    size = rt->getSize();
+        rank = rt->getRank();
+        size = rt->getSize();
 
         return;        //NVSHMEM not yet initialized
     }
 
-    std::cout << "Runtime " << xfer_bench_config.runtime_type
-		      << " not supported for NVSHMEM worker" << std::endl;
+    std::cout << "Runtime " << xfer_bench_config.runtime_type << " not supported for NVSHMEM worker"
+              << std::endl;
     exit(EXIT_FAILURE);
 }
 
