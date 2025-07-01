@@ -104,37 +104,37 @@
     (XFERBENCH_SCHEME_PAIRWISE == xfer_bench_config.scheme && \
      XFERBENCH_MODE_MG == xfer_bench_config.mode)
 struct xferBenchConfig {
-    std::string runtimeType;
-    std::string workerType;
+    std::string runtime_type;
+    std::string worker_type;
     std::string backend;
-    std::string initiatorSegType;
-    std::string targetSegType;
+    std::string initiator_seg_type;
+    std::string target_seg_type;
     std::string scheme;
     std::string mode;
-    std::string opType;
-    bool checkConsistency{false};
-    size_t totalBufferSize{0};
-    int numInitiatorDev{0};
-    int numTargetDev{0};
-    size_t startBlockSize{0};
-    size_t maxBlockSize{0};
-    size_t startBatchSize{0};
-    size_t maxBatchSize{0};
-    int numIter{0};
-    int warmupIter{0};
-    int numThreads{0};
-    bool enablePt{false};
-    std::string deviceList;
-    std::string etcdEndpoints;
-    std::string gdsFilePath;
-    bool enableVmm{false};
-    int numFiles{0};
-    std::string posixApiType;
-    std::string posixFilePath;
-    bool storageEnableDirect{false};
-    int gdsBatchPoolSize{0};
-    int gdsBatchLimit{0};
-    std::string gpunetioDeviceList;
+    std::string op_type;
+    bool check_consistency{false};
+    size_t total_buffer_size{0};
+    int num_initiator_dev{0};
+    int num_target_dev{0};
+    size_t start_block_size{0};
+    size_t max_block_size{0};
+    size_t start_batch_size{0};
+    size_t max_batch_size{0};
+    int num_iter{0};
+    int warmup_iter{0};
+    int num_threads{0};
+    bool enable_pt{false};
+    std::string device_list;
+    std::string etcd_endpoints;
+    std::string gds_file_path;
+    bool enable_vmm{false};
+    int num_files{0};
+    std::string posix_api_type;
+    std::string posix_file_path;
+    bool storage_enable_direct{false};
+    int gds_batch_pool_size{0};
+    int gds_batch_limit{0};
+    std::string gpunetio_device_list;
 
     int
     loadFromFlags();

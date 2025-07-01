@@ -36,12 +36,12 @@ static std::pair<size_t, size_t> getStrideScheme(xferBenchWorker &worker, int nu
     int initiator_device, target_device;
     size_t buffer_size, count, stride;
 
-    initiator_device = xfer_bench_config.numInitiatorDev;
-    target_device = xfer_bench_config.numTargetDev;
+    initiator_device = xfer_bench_config.num_initiator_dev;
+    target_device = xfer_bench_config.num_target_dev;
 
     // Default value
     count = 1;
-    buffer_size = xfer_bench_config.totalBufferSize / (initiator_device * num_threads);
+    buffer_size = xfer_bench_config.total_buffer_size / (initiator_device * num_threads);
 
     // TODO: add macro for schemes
     // Maybe, we can squeze ONE_TO_MANY and MANY_TO_ONE into TP scheme
@@ -102,8 +102,8 @@ static std::vector<std::vector<xferBenchIOV>> createTransferDescLists(xferBenchW
 static int processBatchSizes(xferBenchWorker &worker,
                              std::vector<std::vector<xferBenchIOV>> &iov_lists,
                              size_t block_size, int num_threads) {
-    for (size_t batch_size = xfer_bench_config.startBatchSize;
-         !worker.signaled() && batch_size <= xfer_bench_config.maxBatchSize;
+    for (size_t batch_size = xfer_bench_config.start_batch_size;
+         !worker.signaled() && batch_size <= xfer_bench_config.max_batch_size;
          batch_size *= 2) {
         auto local_trans_lists = createTransferDescLists(worker,
                                                          iov_lists,
@@ -115,8 +115,8 @@ static int processBatchSizes(xferBenchWorker &worker,
             worker.exchangeIOV(local_trans_lists);
             worker.poll(block_size);
 
-            if (xfer_bench_config.checkConsistency &&
-                xfer_bench_config.opType == XFERBENCH_OP_WRITE) {
+            if (xfer_bench_config.check_consistency &&
+                xfer_bench_config.op_type == XFERBENCH_OP_WRITE) {
                 xferBenchUtils::checkConsistency(local_trans_lists);
             }
             if (IS_PAIRWISE_AND_SG()) {
@@ -134,10 +134,10 @@ static int processBatchSizes(xferBenchWorker &worker,
                 return 1;
             }
 
-            if (xfer_bench_config.checkConsistency) {
-                if (xfer_bench_config.opType == XFERBENCH_OP_READ) {
+            if (xfer_bench_config.check_consistency) {
+                if (xfer_bench_config.op_type == XFERBENCH_OP_READ) {
                     xferBenchUtils::checkConsistency(local_trans_lists);
-                } else if (xfer_bench_config.opType == XFERBENCH_OP_WRITE) {
+                } else if (xfer_bench_config.op_type == XFERBENCH_OP_WRITE) {
                     // Only storage backends support consistency check for write on initiator
                     if ((xfer_bench_config.backend == XFERBENCH_BACKEND_GDS) ||
                         (xfer_bench_config.backend == XFERBENCH_BACKEND_POSIX)) {
@@ -155,14 +155,14 @@ static int processBatchSizes(xferBenchWorker &worker,
 }
 
 static std::unique_ptr<xferBenchWorker> createWorker(int *argc, char ***argv) {
-    if (xfer_bench_config.workerType == "nixl") {
+    if (xfer_bench_config.worker_type == "nixl") {
         std::vector<std::string> devices = xfer_bench_config.parseDeviceList();
         if (devices.empty()) {
             std::cerr << "Failed to parse device list" << std::endl;
             return nullptr;
         }
         return std::make_unique<xferBenchNixlWorker>(argc, argv, devices);
-    } else if (xfer_bench_config.workerType == "nvshmem") {
+    } else if (xfer_bench_config.worker_type == "nvshmem") {
 #if HAVE_NVSHMEM && HAVE_CUDA
         return std::make_unique<xferBenchNvshmemWorker>(argc, argv);
 #else
@@ -170,7 +170,7 @@ static std::unique_ptr<xferBenchWorker> createWorker(int *argc, char ***argv) {
         return nullptr;
 #endif
     } else {
-        std::cerr << "Unsupported worker type: " << xfer_bench_config.workerType << std::endl;
+        std::cerr << "Unsupported worker type: " << xfer_bench_config.worker_type << std::endl;
         return nullptr;
     }
 }
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    int num_threads = xfer_bench_config.numThreads;
+    int num_threads = xfer_bench_config.num_threads;
 
     // Create the appropriate worker based on worker configuration
     std::unique_ptr<xferBenchWorker> worker_ptr = createWorker(&argc, &argv);
@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
         xferBenchUtils::printStatsHeader();
     }
 
-    for (size_t block_size = xfer_bench_config.startBlockSize;
-         !worker_ptr->signaled() && block_size <= xfer_bench_config.maxBlockSize;
+    for (size_t block_size = xfer_bench_config.start_block_size;
+         !worker_ptr->signaled() && block_size <= xfer_bench_config.max_block_size;
          block_size *= 2) {
         ret = processBatchSizes(*worker_ptr, iov_lists, block_size, num_threads);
         if (0 != ret) {
