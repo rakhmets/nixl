@@ -25,14 +25,13 @@ static xferBenchRT *createRT(int *terminate) {
     if (XFERBENCH_RT_ETCD == xfer_bench_config.runtime_type) {
         int total = 2;
         if (XFERBENCH_MODE_SG == xfer_bench_config.mode) {
-            total = xfer_bench_config.num_initiator_dev +
-                xfer_bench_config.num_target_dev;
+            total = xfer_bench_config.num_initiator_dev + xfer_bench_config.num_target_dev;
         }
         if ((XFERBENCH_BACKEND_GDS == xfer_bench_config.backend) ||
             (XFERBENCH_BACKEND_POSIX == xfer_bench_config.backend)) {
             total = 1;
         }
-        return new xferBenchEtcdRT(xfer_bench_config.etcd_endpoints, total, terminate);
+        return new xferBenchEtcdRT (xfer_bench_config.etcd_endpoints, total, terminate);
     }
 
     std::cerr << "Invalid runtime: " << xfer_bench_config.runtime_type << std::endl;
