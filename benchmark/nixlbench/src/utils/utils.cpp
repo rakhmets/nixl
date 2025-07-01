@@ -160,8 +160,10 @@ xferBenchConfig::loadFromFlags() {
 
     if (worker_type == XFERBENCH_WORKER_NVSHMEM) {
         if (!((XFERBENCH_SEG_TYPE_VRAM == initiator_seg_type) &&
-              (XFERBENCH_SEG_TYPE_VRAM == target_seg_type) && (1 == num_threads) &&
-              (1 == num_initiator_dev) && (1 == num_target_dev) &&
+              (XFERBENCH_SEG_TYPE_VRAM == target_seg_type) &&
+              (1 == num_threads) &&
+              (1 == num_initiator_dev) &&
+              (1 == num_target_dev) &&
               (XFERBENCH_SCHEME_PAIRWISE == scheme))) {
             std::cerr << "Unsupported configuration for NVSHMEM worker" << std::endl;
             std::cerr << "Supported configuration: " << std::endl;
@@ -272,7 +274,8 @@ xferBenchConfig::printConfig() const {
 
         // Print DOCA GPUNetIO options if backend is DOCA GPUNetIO
         if (backend == XFERBENCH_BACKEND_GPUNETIO) {
-            std::cout << std::left << std::setw(60) << "GPU CUDA Device id list (--device_list=dev1,dev2,...)" << ": "
+            std::cout << std::left << std::setw (60)
+                      << "GPU CUDA Device id list (--device_list=dev1,dev2,...)" << ": "
                       << gpunetio_device_list << std::endl;
         }
     }
