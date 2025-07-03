@@ -64,13 +64,13 @@ static std::vector<std::vector<xferBenchIOV>> storage_remote_iovs;
         std::string _seg_type_str = ((is_initiator) ? xfer_bench_config.initiator_seg_type : \
                                                       xfer_bench_config.target_seg_type);    \
         nixl_mem_t _seg_type;                                                                \
-        if (0 == _seg_type_str.compare ("DRAM")) {                                           \
+        if (0 == _seg_type_str.compare("DRAM")) {                                            \
             _seg_type = DRAM_SEG;                                                            \
-        } else if (0 == _seg_type_str.compare ("VRAM")) {                                    \
-            HANDLE_VRAM_SEGMENT (_seg_type);                                                 \
+        } else if (0 == _seg_type_str.compare("VRAM")) {                                     \
+            HANDLE_VRAM_SEGMENT(_seg_type);                                                  \
         } else {                                                                             \
             std::cerr << "Invalid segment type: " << _seg_type_str << std::endl;             \
-            exit (EXIT_FAILURE);                                                             \
+            exit(EXIT_FAILURE);                                                              \
         }                                                                                    \
         _seg_type;                                                                           \
     })
@@ -136,8 +136,8 @@ xferBenchNixlWorker::xferBenchNixlWorker(int *argc, char ***argv, std::vector<st
     } else if (0 == xfer_bench_config.backend.compare(XFERBENCH_BACKEND_GDS)) {
         // Using default param values for GDS backend
         std::cout << "GDS backend" << std::endl;
-        backend_params["batch_pool_size"] = std::to_string (xfer_bench_config.gds_batch_pool_size);
-        backend_params["batch_limit"] = std::to_string (xfer_bench_config.gds_batch_limit);
+        backend_params["batch_pool_size"] = std::to_string(xfer_bench_config.gds_batch_pool_size);
+        backend_params["batch_limit"] = std::to_string(xfer_bench_config.gds_batch_limit);
         std::cout << "GDS batch pool size: " << xfer_bench_config.gds_batch_pool_size << std::endl;
         std::cout << "GDS batch limit: " << xfer_bench_config.gds_batch_limit << std::endl;
     } else if (0 == xfer_bench_config.backend.compare(XFERBENCH_BACKEND_POSIX)) {
@@ -747,7 +747,7 @@ std::variant<double, int> xferBenchNixlWorker::transfer(size_t block_size,
     }
 
     ret =
-        execTransfer (agent, local_iovs, remote_iovs, xfer_op, skip, xfer_bench_config.num_threads);
+        execTransfer(agent, local_iovs, remote_iovs, xfer_op, skip, xfer_bench_config.num_threads);
     if (ret < 0) {
         return std::variant<double, int>(ret);
     }
@@ -757,7 +757,7 @@ std::variant<double, int> xferBenchNixlWorker::transfer(size_t block_size,
 
     gettimeofday(&t_start, nullptr);
 
-    ret = execTransfer (
+    ret = execTransfer(
         agent, local_iovs, remote_iovs, xfer_op, num_iter, xfer_bench_config.num_threads);
 
     gettimeofday(&t_end, nullptr);

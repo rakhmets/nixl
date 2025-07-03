@@ -235,10 +235,11 @@ xferBenchConfig::loadFromFlags() {
 }
 
 namespace {
-void printOption(const std::string &desc, const std::string &value) {
+void
+printOption(const std::string &desc, const std::string &value) {
     std::cout << std::left << std::setw(60) << desc << ": " << value << std::endl;
 }
-}
+} // namespace
 
 void
 xferBenchConfig::printConfig() const {
@@ -306,12 +307,12 @@ std::vector<std::string>
 xferBenchConfig::parseDeviceList() const {
     std::vector<std::string> devices;
     std::string dev;
-    std::stringstream ss (device_list);
+    std::stringstream ss(device_list);
 
     // TODO: Add support for other schemes
     if (scheme == XFERBENCH_SCHEME_PAIRWISE && device_list != "all") {
-        while (std::getline (ss, dev, ',')) {
-            devices.push_back (dev);
+        while (std::getline(ss, dev, ',')) {
+            devices.push_back(dev);
         }
 
         if ((int)devices.size() != num_initiator_dev || (int)devices.size() != num_target_dev) {
