@@ -86,6 +86,10 @@ static std::vector<std::vector<xferBenchIOV>> createTransferDescLists(xferBenchW
 
                 for (size_t j = 0; j < batch_size; j++) {
                     size_t block_offset = ((j * block_size) % iov.len);
+                    if (block_offset + block_size > iov.len) {
+                        // Prevent memory overflow when iov.len is not divisible by block_size
+                        block_offset = 0;
+                    }
                     xfer_list.push_back(xferBenchIOV((iov.addr + dev_offset) + block_offset,
                                                       block_size,
                                                       iov.devId));
@@ -139,8 +143,7 @@ static int processBatchSizes(xferBenchWorker &worker,
                     xferBenchUtils::checkConsistency(local_trans_lists);
                 } else if (xfer_bench_config.op_type == XFERBENCH_OP_WRITE) {
                     // Only storage backends support consistency check for write on initiator
-                    if ((xfer_bench_config.backend == XFERBENCH_BACKEND_GDS) ||
-                        (xfer_bench_config.backend == XFERBENCH_BACKEND_POSIX)) {
+                    if (xfer_bench_config.isStorageBackend()) {
                         xferBenchUtils::checkConsistency(remote_trans_lists);
                     }
                 }

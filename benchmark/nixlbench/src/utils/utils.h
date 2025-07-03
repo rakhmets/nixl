@@ -70,6 +70,7 @@
 #define XFERBENCH_BACKEND_POSIX "POSIX"
 #define XFERBENCH_BACKEND_GPUNETIO "GPUNETIO"
 #define XFERBENCH_BACKEND_MOONCAKE "Mooncake"
+#define XFERBENCH_BACKEND_HF3FS "HF3FS"
 
 // POSIX API types
 #define XFERBENCH_POSIX_API_AIO "AIO"
@@ -126,11 +127,10 @@ struct xferBenchConfig {
     bool enable_pt{false};
     std::string device_list;
     std::string etcd_endpoints;
-    std::string gds_filepath;
+    std::string filepath;
     bool enable_vmm{false};
     int num_files{0};
     std::string posix_api_type;
-    std::string posix_filepath;
     bool storage_enable_direct{false};
     int gds_batch_pool_size{0};
     int gds_batch_limit{0};
@@ -142,6 +142,8 @@ struct xferBenchConfig {
     printConfig() const;
     std::vector<std::string>
     parseDeviceList() const;
+    bool
+    isStorageBackend() const;
 };
 
 extern xferBenchConfig xfer_bench_config;

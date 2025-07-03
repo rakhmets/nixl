@@ -27,11 +27,18 @@ static xferBenchRT *createRT(int *terminate) {
         if (XFERBENCH_MODE_SG == xfer_bench_config.mode) {
             total = xfer_bench_config.num_initiator_dev + xfer_bench_config.num_target_dev;
         }
-        if ((XFERBENCH_BACKEND_GDS == xfer_bench_config.backend) ||
-            (XFERBENCH_BACKEND_POSIX == xfer_bench_config.backend)) {
+
+        if (xfer_bench_config.isStorageBackend()) {
             total = 1;
         }
-        return new xferBenchEtcdRT (xfer_bench_config.etcd_endpoints, total, terminate);
+        xferBenchEtcdRT *etcd_rt =
+            new xferBenchEtcdRT (xfer_bench_config.etcd_endpoints, total, terminate);
+        if (etcd_rt->setup() != 0) {
+            std::cerr << "Failed to setup ETCD runtime" << std::endl;
+            delete etcd_rt;
+            exit (EXIT_FAILURE);
+        }
+        return etcd_rt;
     }
 
     std::cerr << "Invalid runtime: " << xfer_bench_config.runtime_type << std::endl;
