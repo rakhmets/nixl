@@ -95,14 +95,14 @@ public:
     std::vector<GdsMtTransferRequestH> request_list;
     tf::Taskflow taskflow;
     std::future<void> running_transfer;
-    std::atomic<nixl_status_t> overall_status;
+    std::atomic<nixlStatus> overall_status;
 };
 
 size_t
 getThreadCount (const nixlBackendInitParams *init_params) {
     size_t thread_count = default_thread_count;
 
-    nixl_b_params_t *custom_params = init_params->customParams;
+    nixlBParams *custom_params = init_params->customParams;
     if (custom_params) {
         if (custom_params->count ("thread_count") > 0) {
             try {
@@ -121,7 +121,7 @@ getThreadCount (const nixlBackendInitParams *init_params) {
 }
 
 void
-runCuFileOp (GdsMtTransferRequestH *req, std::atomic<nixl_status_t> *overall_status) {
+runCuFileOp (GdsMtTransferRequestH *req, std::atomic<nixlStatus> *overall_status) {
     ssize_t nbytes = 0;
     if (req->op == CUFILE_READ) {
         nbytes = cuFileRead (req->fh, req->addr, req->size, req->file_offset, 0);
@@ -150,7 +150,7 @@ runCuFileOp (GdsMtTransferRequestH *req, std::atomic<nixl_status_t> *overall_sta
     }
 }
 
-nixl_status_t
+nixlStatus
 extractTransferParams (const nixlMetaDesc &mem_desc,
                        const nixlMetaDesc &file_desc,
                        const std::unordered_map<int, std::weak_ptr<gdsMtFileHandle>> &file_map,
@@ -189,9 +189,9 @@ nixlGdsMtEngine::nixlGdsMtEngine (const nixlBackendInitParams *init_params)
     NIXL_DEBUG << "GDS_MIT: thread count=" << thread_count_;
 }
 
-nixl_status_t
+nixlStatus
 nixlGdsMtEngine::registerMem (const nixlBlobDesc &mem,
-                              const nixl_mem_t &nixl_mem,
+                              const nixlMemType &nixl_mem,
                               nixlBackendMD *&out) {
     switch (nixl_mem) {
     case FILE_SEG: {
@@ -243,7 +243,7 @@ nixlGdsMtEngine::registerMem (const nixlBlobDesc &mem,
     }
 }
 
-nixl_status_t
+nixlStatus
 nixlGdsMtEngine::deregisterMem (nixlBackendMD *meta) {
     std::unique_ptr<nixlGdsMtMetadata> md ((nixlGdsMtMetadata *)meta);
 
@@ -262,8 +262,8 @@ nixlGdsMtEngine::deregisterMem (nixlBackendMD *meta) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
-nixlGdsMtEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus
+nixlGdsMtEngine::prepXfer (const nixlXferOp &operation,
                            const nixl_meta_dlist_t &local,
                            const nixl_meta_dlist_t &remote,
                            const std::string &remote_agent,
@@ -292,7 +292,7 @@ nixlGdsMtEngine::prepXfer (const nixl_xfer_op_t &operation,
         size_t base_offset;
         CUfileHandle_t cu_fhandle;
 
-        nixl_status_t param_status;
+        nixlStatus param_status;
         if (is_local_file) {
             param_status = extractTransferParams (remote[i],
                                                   local[i],
@@ -338,8 +338,8 @@ nixlGdsMtEngine::prepXfer (const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
-nixlGdsMtEngine::postXfer (const nixl_xfer_op_t &operation,
+nixlStatus
+nixlGdsMtEngine::postXfer (const nixlXferOp &operation,
                            const nixl_meta_dlist_t &local,
                            const nixl_meta_dlist_t &remote,
                            const std::string &remote_agent,
@@ -352,7 +352,7 @@ nixlGdsMtEngine::postXfer (const nixl_xfer_op_t &operation,
     return NIXL_IN_PROG;
 }
 
-nixl_status_t
+nixlStatus
 nixlGdsMtEngine::checkXfer (nixlBackendReqH *handle) const {
     nixlGdsMtBackendReqH *gds_mt_handle = (nixlGdsMtBackendReqH *)handle;
     if (gds_mt_handle->running_transfer.wait_for (nixlTime::seconds (0)) !=
@@ -363,7 +363,7 @@ nixlGdsMtEngine::checkXfer (nixlBackendReqH *handle) const {
     return gds_mt_handle->overall_status.load();
 }
 
-nixl_status_t
+nixlStatus
 nixlGdsMtEngine::releaseReqH (nixlBackendReqH *handle) const {
     std::unique_ptr<nixlGdsMtBackendReqH> gds_mt_handle ((nixlGdsMtBackendReqH *)handle);
     return NIXL_SUCCESS;

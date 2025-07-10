@@ -37,19 +37,19 @@ class hf3fsUtil {
 public:
     hf3fsUtil() {}
     ~hf3fsUtil() {}
-    nixl_status_t registerFileHandle(int fd, int *ret);
+    nixlStatus registerFileHandle(int fd, int *ret);
     void deregisterFileHandle(int fd);
-    nixl_status_t openHf3fsDriver();
+    nixlStatus openHf3fsDriver();
     void closeHf3fsDriver();
-    nixl_status_t createIOR(struct hf3fs_ior *ior, int num_ios, bool is_read);
-    nixl_status_t createIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size);
-    nixl_status_t wrapIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size);
+    nixlStatus createIOR(struct hf3fs_ior *ior, int num_ios, bool is_read);
+    nixlStatus createIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size);
+    nixlStatus wrapIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size);
     void destroyIOV(struct hf3fs_iov *iov);
-    nixl_status_t destroyIOR(struct hf3fs_ior *ior);
-    nixl_status_t prepIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr,
+    nixlStatus destroyIOR(struct hf3fs_ior *ior);
+    nixlStatus prepIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr,
                          size_t fd_offset, size_t size, int fd, bool is_read, void *user_data);
-    nixl_status_t postIOR(struct hf3fs_ior *ior);
-    nixl_status_t waitForIOs(struct hf3fs_ior *ior, struct hf3fs_cqe *cqes, int num_cqes,
+    nixlStatus postIOR(struct hf3fs_ior *ior);
+    nixlStatus waitForIOs(struct hf3fs_ior *ior, struct hf3fs_cqe *cqes, int num_cqes,
                              int min_cqes, struct timespec *ts, int *num_completed);
     std::string mount_point;
 };

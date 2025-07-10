@@ -53,7 +53,7 @@ enum nixl_comm_t {
 // 2) IP Address
 // 3) Port
 // 4) Metadata to send (for sendLocalMD calls)
-using nixl_comm_req_t = std::tuple<nixl_comm_t, std::string, int, nixl_blob_t>;
+using nixl_comm_req_t = std::tuple<nixl_comm_t, std::string, int, nixlBlob>;
 
 using nixl_socket_peer_t = std::pair<std::string, int>;
 
@@ -72,14 +72,14 @@ class nixlAgentData {
         std::array<backend_list_t, FILE_SEG+1> memToBackend;
 
         // Bookkeping for local connection metadata and user handles per backend
-        std::unordered_map<nixl_backend_t, nixlBackendH*> backendHandles;
-        std::unordered_map<nixl_backend_t, nixl_blob_t>   connMD;
+        std::unordered_map<nixlBackend, nixlBackendH*> backendHandles;
+        std::unordered_map<nixlBackend, nixlBlob>   connMD;
 
         // Local section, and Remote sections and their available common backends
         nixlLocalSection*                                        memorySection;
 
         std::unordered_map<std::string,
-                           std::unordered_map<nixl_backend_t, nixl_blob_t>,
+                           std::unordered_map<nixlBackend, nixlBlob>,
                            std::hash<std::string>, strEqual>     remoteBackends;
         std::unordered_map<std::string, nixlRemoteSection*,
                            std::hash<std::string>, strEqual>     remoteSections;
@@ -114,7 +114,7 @@ class nixlBackendH {
         ~nixlBackendH () {}
 
     public:
-        nixl_backend_t getType () const { return engine->getType(); }
+        nixlBackend getType () const { return engine->getType(); }
 
         bool supportsRemote () const { return engine->supportsRemote(); }
         bool supportsLocal  () const { return engine->supportsLocal (); }

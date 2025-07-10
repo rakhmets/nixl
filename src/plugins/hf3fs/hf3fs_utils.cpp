@@ -22,7 +22,7 @@
 #include "common/nixl_log.h"
 
 
-nixl_status_t hf3fsUtil::registerFileHandle(int fd, int *ret)
+nixlStatus hf3fsUtil::registerFileHandle(int fd, int *ret)
 {
 	int ret_val = hf3fs_reg_fd(fd, 0);
 	if (ret_val > 0) {
@@ -34,7 +34,7 @@ nixl_status_t hf3fsUtil::registerFileHandle(int fd, int *ret)
 	return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::openHf3fsDriver()
+nixlStatus hf3fsUtil::openHf3fsDriver()
 {
     return NIXL_SUCCESS;
 }
@@ -49,7 +49,7 @@ void hf3fsUtil::deregisterFileHandle(int fd)
     hf3fs_dereg_fd(fd);
 }
 
-nixl_status_t hf3fsUtil::wrapIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size)
+nixlStatus hf3fsUtil::wrapIOV(struct hf3fs_iov *iov, void *addr, size_t size, size_t block_size)
 {
     // Create a dummy ID - you might want a more sophisticated approach
     uint8_t dummy_id[16] = {0};
@@ -65,7 +65,7 @@ nixl_status_t hf3fsUtil::wrapIOV(struct hf3fs_iov *iov, void *addr, size_t size,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::createIOR(struct hf3fs_ior *ior, int num_ios, bool is_read)
+nixlStatus hf3fsUtil::createIOR(struct hf3fs_ior *ior, int num_ios, bool is_read)
 {
     auto ret = hf3fs_iorcreate(ior, this->mount_point.c_str(), num_ios, is_read, num_ios, -1);
     if (ret < 0) {
@@ -77,7 +77,7 @@ nixl_status_t hf3fsUtil::createIOR(struct hf3fs_ior *ior, int num_ios, bool is_r
     return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::createIOV(struct hf3fs_iov *iov, void *addr, size_t size,
+nixlStatus hf3fsUtil::createIOV(struct hf3fs_iov *iov, void *addr, size_t size,
                                    size_t block_size)
 {
     auto ret = hf3fs_iovcreate(iov, this->mount_point.c_str(), size, block_size, -1);
@@ -95,7 +95,7 @@ void hf3fsUtil::destroyIOV(struct hf3fs_iov *iov)
     hf3fs_iovdestroy(iov);
 }
 
-nixl_status_t validateIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr, size_t fd_offset,
+nixlStatus validateIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr, size_t fd_offset,
                          size_t size, int fd, bool is_read)
 {
     if (ior == nullptr) {
@@ -128,7 +128,7 @@ nixl_status_t validateIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *add
     return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::prepIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr,
+nixlStatus hf3fsUtil::prepIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, void *addr,
                                 size_t fd_offset, size_t size, int fd, bool is_read,
                                 void *user_data)
 {
@@ -147,7 +147,7 @@ nixl_status_t hf3fsUtil::prepIO(struct hf3fs_ior *ior, struct hf3fs_iov *iov, vo
 }
 
 
-nixl_status_t hf3fsUtil::postIOR(struct hf3fs_ior *ior)
+nixlStatus hf3fsUtil::postIOR(struct hf3fs_ior *ior)
 {
     auto ret = hf3fs_submit_ios(ior);
     if (ret < 0) {
@@ -159,13 +159,13 @@ nixl_status_t hf3fsUtil::postIOR(struct hf3fs_ior *ior)
     return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::destroyIOR(struct hf3fs_ior *ior)
+nixlStatus hf3fsUtil::destroyIOR(struct hf3fs_ior *ior)
 {
     hf3fs_iordestroy(ior);
     return NIXL_SUCCESS;
 }
 
-nixl_status_t hf3fsUtil::waitForIOs(struct hf3fs_ior *ior, struct hf3fs_cqe *cqes, int num_cqes,
+nixlStatus hf3fsUtil::waitForIOs(struct hf3fs_ior *ior, struct hf3fs_cqe *cqes, int num_cqes,
                                     int min_cqes, struct timespec *ts, int *num_completed)
 {
     auto ret = hf3fs_wait_for_ios(ior, cqes, num_cqes, min_cqes, ts);

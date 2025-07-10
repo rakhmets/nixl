@@ -33,16 +33,16 @@
 
 using namespace std;
 
-[[nodiscard]] nixl_b_params_t
+[[nodiscard]] nixlBParams
 get_ucx_backend_common_options() {
-    nixl_b_params_t params = {{"ucx_devices", ""}, {"num_workers", "1"}};
+    nixlBParams params = {{"ucx_devices", ""}, {"num_workers", "1"}};
 
     params.emplace(nixl_ucx_err_handling_param_name,
                    ucx_err_mode_to_string(UCP_ERR_HANDLING_MODE_PEER));
     return params;
 }
 
-nixl_status_t ucx_status_to_nixl(ucs_status_t status)
+nixlStatus ucx_status_to_nixl(ucs_status_t status)
 {
     if (status == UCS_OK) {
         return NIXL_SUCCESS;
@@ -144,7 +144,7 @@ void nixlUcxEp::setState(nixl_ucx_ep_state_t new_state)
     state = new_state;
 }
 
-nixl_status_t
+nixlStatus
 nixlUcxEp::closeImpl(ucp_ep_close_flags_t flags)
 {
     ucs_status_ptr_t request      = nullptr;
@@ -188,7 +188,7 @@ nixlUcxEp::nixlUcxEp(ucp_worker_h worker, void* addr,
                      ucp_err_handling_mode_t err_handling_mode)
 {
     ucp_ep_params_t ep_params;
-    nixl_status_t status;
+    nixlStatus status;
 
     ep_params.field_mask      = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
                                 UCP_EP_PARAM_FIELD_ERR_HANDLER |
@@ -207,7 +207,7 @@ nixlUcxEp::nixlUcxEp(ucp_worker_h worker, void* addr,
 
  nixlUcxEp::~nixlUcxEp()
  {
-     nixl_status_t status = disconnect_nb();
+     nixlStatus status = disconnect_nb();
      if (status)
          NIXL_ERROR << "Failed to disconnect ep with status " << status;
  }
@@ -216,9 +216,9 @@ nixlUcxEp::nixlUcxEp(ucp_worker_h worker, void* addr,
  * EP management
  * =========================================== */
 
-nixl_status_t nixlUcxEp::disconnect_nb()
+nixlStatus nixlUcxEp::disconnect_nb()
 {
-    nixl_status_t status = closeImpl(ucp_ep_close_flags_t(0));
+    nixlStatus status = closeImpl(ucp_ep_close_flags_t(0));
 
     // At step of disconnect we can ignore the remote disconnect error.
     return (status == NIXL_ERR_REMOTE_DISCONNECT) ? NIXL_SUCCESS : status;
@@ -228,7 +228,7 @@ nixl_status_t nixlUcxEp::disconnect_nb()
  * Active message handling
  * =========================================== */
 
-nixl_status_t nixlUcxEp::sendAm(unsigned msg_id,
+nixlStatus nixlUcxEp::sendAm(unsigned msg_id,
                                 void* hdr, size_t hdr_len,
                                 void* buffer, size_t len,
                                 uint32_t flags, nixlUcxReq &req)
@@ -253,14 +253,14 @@ nixl_status_t nixlUcxEp::sendAm(unsigned msg_id,
  * Data transfer
  * =========================================== */
 
-nixl_status_t
+nixlStatus
 nixlUcxEp::read(uint64_t raddr,
                 const nixl::ucx::rkey &rkey,
                 void *laddr,
                 nixlUcxMem &mem,
                 size_t size,
                 nixlUcxReq &req) {
-    nixl_status_t status = checkTxState();
+    nixlStatus status = checkTxState();
     if (status != NIXL_SUCCESS) {
         return status;
     }
@@ -280,14 +280,14 @@ nixlUcxEp::read(uint64_t raddr,
     return ucx_status_to_nixl(UCS_PTR_STATUS(request));
 }
 
-nixl_status_t
+nixlStatus
 nixlUcxEp::write(void *laddr,
                  nixlUcxMem &mem,
                  uint64_t raddr,
                  const nixl::ucx::rkey &rkey,
                  size_t size,
                  nixlUcxReq &req) {
-    nixl_status_t status = checkTxState();
+    nixlStatus status = checkTxState();
     if (status != NIXL_SUCCESS) {
         return status;
     }
@@ -307,10 +307,10 @@ nixlUcxEp::write(void *laddr,
     return ucx_status_to_nixl(UCS_PTR_STATUS(request));
 }
 
-nixl_status_t nixlUcxEp::estimateCost(size_t size,
+nixlStatus nixlUcxEp::estimateCost(size_t size,
                                       std::chrono::microseconds &duration,
                                       std::chrono::microseconds &err_margin,
-                                      nixl_cost_t &method)
+                                      nixlCost &method)
 {
     ucp_ep_evaluate_perf_param_t params = {
         .field_mask   = UCP_EP_PERF_PARAM_FIELD_MESSAGE_SIZE,
@@ -328,13 +328,13 @@ nixl_status_t nixlUcxEp::estimateCost(size_t size,
     }
 
     duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<double>(cost_result.estimated_time));
-    method = nixl_cost_t::ANALYTICAL_BACKEND;
+    method = nixlCost::ANALYTICAL_BACKEND;
     // Currently, we do not have a way to estimate the error margin
     err_margin = std::chrono::microseconds(0);
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEp::flushEp(nixlUcxReq &req)
+nixlStatus nixlUcxEp::flushEp(nixlUcxReq &req)
 {
     ucp_request_param_t param;
     ucs_status_ptr_t request;
@@ -373,7 +373,7 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
                                nixlUcxContext::req_cb_t fini_cb,
                                bool prog_thread,
                                unsigned long num_workers,
-                               nixl_thread_sync_t sync_mode)
+                               nixlThreadSync sync_mode)
 {
     ucp_params_t ucp_params;
 
@@ -381,7 +381,7 @@ nixlUcxContext::nixlUcxContext(std::vector<std::string> devs,
     // permissive models backends need to account for concurrent access and ensure their internal
     // state is properly protected. Progress thread creates internal concurrency in UCX backend
     // irrespective of nixlAgent synchronization model.
-    mt_type = (sync_mode == nixl_thread_sync_t::NIXL_THREAD_SYNC_RW || prog_thread) ?
+    mt_type = (sync_mode == nixlThreadSync::NIXL_THREAD_SYNC_RW || prog_thread) ?
         nixl_ucx_mt_t::WORKER : nixl_ucx_mt_t::SINGLE;
 
     ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_MT_WORKERS_SHARED;
@@ -524,7 +524,7 @@ absl::StatusOr<std::unique_ptr<nixlUcxEp>> nixlUcxWorker::connect(void* addr, st
  * =========================================== */
 
 
-int nixlUcxContext::memReg(void *addr, size_t size, nixlUcxMem &mem, nixl_mem_t nixl_mem_type)
+int nixlUcxContext::memReg(void *addr, size_t size, nixlUcxMem &mem, nixlMemType nixlMemTypeype)
 {
     //mem.uw = this;
     mem.base = addr;
@@ -544,7 +544,7 @@ int nixlUcxContext::memReg(void *addr, size_t size, nixlUcxMem &mem, nixl_mem_t 
         return -1;
     }
 
-    if (nixl_mem_type == nixl_mem_t::VRAM_SEG) {
+    if (nixlMemTypeype == nixlMemType::VRAM_SEG) {
         ucp_mem_attr_t attr;
         attr.field_mask = UCP_MEM_ATTR_FIELD_MEM_TYPE;
         status = ucp_mem_query(mem.memh, &attr);
@@ -618,7 +618,7 @@ int nixlUcxWorker::progress()
   return ucp_worker_progress(worker.get());
 }
 
-nixl_status_t nixlUcxWorker::test(nixlUcxReq req)
+nixlStatus nixlUcxWorker::test(nixlUcxReq req)
 {
     if(req == nullptr) {
         return NIXL_SUCCESS;
@@ -637,7 +637,7 @@ void nixlUcxWorker::reqCancel(nixlUcxReq req)
     ucp_request_cancel(worker.get(), req);
 }
 
-nixl_status_t
+nixlStatus
 nixlUcxWorker::arm() const noexcept {
     return ucx_status_to_nixl(ucp_worker_arm(worker.get()));
 }

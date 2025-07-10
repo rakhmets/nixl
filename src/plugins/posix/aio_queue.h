@@ -32,7 +32,7 @@ class aioQueue : public nixlPosixQueue {
         std::vector<bool> completed; // Track completed I/Os
         int num_completed;                 // Number of completed operations
         int num_submitted;                 // Track number of submitted I/Os
-        nixl_xfer_op_t operation;          // Whether this is a read operation
+        nixlXferOp operation;          // Whether this is a read operation
 
         // Delete copy and move operations
         aioQueue(const aioQueue&) = delete;
@@ -41,12 +41,12 @@ class aioQueue : public nixlPosixQueue {
         aioQueue& operator=(aioQueue&&) = delete;
 
     public:
-        aioQueue(int num_entries, nixl_xfer_op_t operation);
+        aioQueue(int num_entries, nixlXferOp operation);
         ~aioQueue();
-        nixl_status_t
+        nixlStatus
         submit (const nixl_meta_dlist_t &, const nixl_meta_dlist_t &) override;
-        nixl_status_t checkCompleted() override;
-        nixl_status_t prepIO(int fd, void* buf, size_t len, off_t offset) override;
+        nixlStatus checkCompleted() override;
+        nixlStatus prepIO(int fd, void* buf, size_t len, off_t offset) override;
 };
 
 #endif // AIO_QUEUE_H

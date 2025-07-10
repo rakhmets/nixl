@@ -19,7 +19,7 @@
 
 namespace mocks {
 
-nixl_b_params_t custom_params;
+nixlBParams custom_params;
 const nixlBackendInitParams init_params{.customParams = &custom_params};
 const std::string gmock_engine_key = "gmock_engine_key";
 
@@ -31,7 +31,7 @@ GMockBackendEngine::GMockBackendEngine() : nixlBackendEngine(&init_params) {
     ON_CALL(*this, supportsLocal()).WillByDefault(Return(true));
     ON_CALL(*this, supportsNotif()).WillByDefault(Return(true));
     ON_CALL(*this, supportsProgTh()).WillByDefault(Return(false));
-    ON_CALL(*this, getSupportedMems()).WillByDefault(Return(nixl_mem_list_t{DRAM_SEG}));
+    ON_CALL(*this, getSupportedMems()).WillByDefault(Return(nixlMemList{DRAM_SEG}));
     ON_CALL(*this, registerMem(_, _, _)).WillByDefault(Return(NIXL_SUCCESS));
     ON_CALL(*this, deregisterMem(_)).WillByDefault(Return(NIXL_SUCCESS));
     ON_CALL(*this, connect(_)).WillByDefault(Return(NIXL_SUCCESS));
@@ -55,12 +55,12 @@ GMockBackendEngine::GMockBackendEngine() : nixlBackendEngine(&init_params) {
 }
 
 void
-GMockBackendEngine::SetToParams(nixl_b_params_t &params) const {
+GMockBackendEngine::SetToParams(nixlBParams &params) const {
     params[gmock_engine_key] = std::to_string(reinterpret_cast<uintptr_t>(this));
 }
 
 GMockBackendEngine *
-GMockBackendEngine::GetFromParams(nixl_b_params_t *params) {
+GMockBackendEngine::GetFromParams(nixlBParams *params) {
     try {
         std::string gmock_engine_ptr_str = params->at(gmock_engine_key);
         return reinterpret_cast<GMockBackendEngine *>(std::stoul(gmock_engine_ptr_str));

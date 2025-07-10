@@ -49,8 +49,8 @@ static const std::string target("target");
 static const std::string initiator("initiator");
 
 static std::vector<std::unique_ptr<uint8_t[]>> initMem(nixlAgent &agent,
-                                                       nixl_reg_dlist_t &dram,
-                                                       nixl_opt_args_t *extra_params,
+                                                       nixlRegDlist &dram,
+                                                       nixlAgentOptionalArgs *extra_params,
                                                        uint8_t val) {
     std::vector<std::unique_ptr<uint8_t[]>> addrs;
 
@@ -69,11 +69,11 @@ static std::vector<std::unique_ptr<uint8_t[]>> initMem(nixlAgent &agent,
     return addrs;
 }
 
-static void targetThread(nixlAgent &agent, nixl_opt_args_t *extra_params, int thread_id) {
-    nixl_reg_dlist_t dram_for_ucx(DRAM_SEG);
+static void targetThread(nixlAgent &agent, nixlAgentOptionalArgs *extra_params, int thread_id) {
+    nixlRegDlist dram_for_ucx(DRAM_SEG);
     auto addrs = initMem(agent, dram_for_ucx, extra_params, 0);
 
-    nixl_blob_t tgt_metadata;
+    nixlBlob tgt_metadata;
     agent.getLocalMD(tgt_metadata);
 
     std::cout << "Thread " << thread_id << " Start Control Path metadata exchanges\n";
@@ -115,16 +115,16 @@ static void targetThread(nixlAgent &agent, nixl_opt_args_t *extra_params, int th
     agent.deregisterMem(dram_for_ucx, extra_params);
 }
 
-static void initiatorThread(nixlAgent &agent, nixl_opt_args_t *extra_params,
+static void initiatorThread(nixlAgent &agent, nixlAgentOptionalArgs *extra_params,
                           const std::string &target_ip, int target_port, int thread_id,
                           SharedNotificationState &shared_state) {
-    nixl_reg_dlist_t dram_for_ucx(DRAM_SEG);
+    nixlRegDlist dram_for_ucx(DRAM_SEG);
     auto addrs = initMem(agent, dram_for_ucx, extra_params, MEM_VAL);
 
     std::cout << "Thread " << thread_id << " Start Control Path metadata exchanges\n";
     std::cout << "Thread " << thread_id << " Exchange metadata with Target\n";
 
-    nixl_opt_args_t md_extra_params;
+    nixlAgentOptionalArgs md_extra_params;
     md_extra_params.ipAddr = target_ip;
     md_extra_params.port = target_port;
 
@@ -141,8 +141,8 @@ static void initiatorThread(nixlAgent &agent, nixl_opt_args_t *extra_params,
             }
         }
 
-        nixl_notifs_t notifs;
-        nixl_status_t ret = agent.getNotifs(notifs, extra_params);
+        nixlNotifs notifs;
+        nixlStatus ret = agent.getNotifs(notifs, extra_params);
         assert(ret >= 0);
 
         if (notifs.size() > 0) {
@@ -163,8 +163,8 @@ static void initiatorThread(nixlAgent &agent, nixl_opt_args_t *extra_params,
     }
 
     std::cout << "Thread " << thread_id << " Verify Deserialized Target's Desc List at Initiator\n";
-    nixl_xfer_dlist_t dram_target_ucx(&remote_serdes);
-    nixl_xfer_dlist_t dram_initiator_ucx = dram_for_ucx.trim();
+    nixlXferDlist dram_target_ucx(&remote_serdes);
+    nixlXferDlist dram_initiator_ucx = dram_for_ucx.trim();
     dram_target_ucx.print();
 
     std::cout << "Thread " << thread_id << " End Control Path metadata exchanges\n";
@@ -175,7 +175,7 @@ static void initiatorThread(nixlAgent &agent, nixl_opt_args_t *extra_params,
     // UCX AM with desc list is faster than listener thread can recv/load MD with sockets
     // Will be deprecated with ETCD or callbacks
     nixlXferReqH *treq;
-    nixl_status_t ret = NIXL_SUCCESS;
+    nixlStatus ret = NIXL_SUCCESS;
     do {
         ret = agent.createXferReq(NIXL_WRITE, dram_initiator_ucx, dram_target_ucx,
                                   target, treq, extra_params);
@@ -203,19 +203,19 @@ static void initiatorThread(nixlAgent &agent, nixl_opt_args_t *extra_params,
     agent.deregisterMem(dram_for_ucx, extra_params);
 }
 
-static void runTarget(const std::string &ip, int port, nixl_thread_sync_t sync_mode) {
+static void runTarget(const std::string &ip, int port, nixlThreadSync sync_mode) {
     nixlAgentConfig cfg(true, true, port, sync_mode);
 
     std::cout << "Starting Agent for target\n";
     nixlAgent agent(target, cfg);
 
-    nixl_b_params_t params = {
+    nixlBParams params = {
         { "num_workers", "4" },
     };
     nixlBackendH *ucx;
     agent.createBackend("UCX", params, ucx);
 
-    nixl_opt_args_t extra_params;
+    nixlAgentOptionalArgs extra_params;
     extra_params.backends.push_back(ucx);
 
     std::vector<std::thread> threads;
@@ -226,19 +226,19 @@ static void runTarget(const std::string &ip, int port, nixl_thread_sync_t sync_m
         thread.join();
 }
 
-static void runInitiator(const std::string &target_ip, int target_port, nixl_thread_sync_t sync_mode) {
+static void runInitiator(const std::string &target_ip, int target_port, nixlThreadSync sync_mode) {
     nixlAgentConfig cfg(true, true, 0, sync_mode);
 
     std::cout << "Starting Agent for initiator\n";
     nixlAgent agent(initiator, cfg);
 
-    nixl_b_params_t params = {
+    nixlBParams params = {
         { "num_workers", "4" },
     };
     nixlBackendH *ucx;
     agent.createBackend("UCX", params, ucx);
 
-    nixl_opt_args_t extra_params;
+    nixlAgentOptionalArgs extra_params;
     extra_params.backends.push_back(ucx);
 
     SharedNotificationState shared_state;
@@ -273,15 +273,15 @@ int main(int argc, char *argv[]) {
             return 1;
     }
 
-    auto sync_mode = nixl_thread_sync_t::NIXL_THREAD_SYNC_RW;
+    auto sync_mode = nixlThreadSync::NIXL_THREAD_SYNC_RW;
     if (argc == 5) {
         std::string sync_mode_str{argv[4]};
         std::transform(sync_mode_str.begin(), sync_mode_str.end(), sync_mode_str.begin(), ::tolower);
         if (sync_mode_str == "rw") {
-            sync_mode = nixl_thread_sync_t::NIXL_THREAD_SYNC_RW;
+            sync_mode = nixlThreadSync::NIXL_THREAD_SYNC_RW;
             std::cout << "Using RW sync mode" << std::endl;
         } else if (sync_mode_str == "strict") {
-            sync_mode = nixl_thread_sync_t::NIXL_THREAD_SYNC_STRICT;
+            sync_mode = nixlThreadSync::NIXL_THREAD_SYNC_STRICT;
             std::cout << "Using Strict sync mode" << std::endl;
         } else {
             std::cerr << "Invalid sync mode. Use 'rw' or 'strict'." << std::endl;

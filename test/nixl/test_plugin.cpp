@@ -27,7 +27,7 @@ void print_usage(const char* program_name) {
     std::cout << "  NIXL_PLUGIN_DIR   - Single directory containing plugins" << std::endl;
 }
 
-void printParams(const nixl_b_params_t& params) {
+void printParams(const nixlBParams& params) {
     if (params.empty()) {
         std::cout << "Parameters: (empty)" << std::endl;
         return;
@@ -63,7 +63,7 @@ int verify_plugin(std::string name, nixlPluginManager& plugin_manager)
 
 int main(int argc, char** argv) {
     char *plugindir = NULL;
-    std::set<nixl_backend_t> staticPlugs;
+    std::set<nixlBackend> staticPlugs;
 
     std::set<std::string> plugins = {
         "UCX", "GDS", "POSIX", "UCX_MO", "MOCK_BACKEND", "GPUNETIO", "OBJ", "GDS_MT"};

@@ -39,7 +39,7 @@ namespace gtest {
 
 class MemBuffer : std::shared_ptr<void> {
 public:
-    MemBuffer(size_t size, nixl_mem_t mem_type = DRAM_SEG) :
+    MemBuffer(size_t size, nixlMemType mem_type = DRAM_SEG) :
         std::shared_ptr<void>(allocate(size, mem_type),
                               [mem_type](void *ptr) {
                                   release(ptr, mem_type);
@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    static void *allocate(size_t size, nixl_mem_t mem_type)
+    static void *allocate(size_t size, nixlMemType mem_type)
     {
         switch (mem_type) {
         case DRAM_SEG:
@@ -74,7 +74,7 @@ private:
         }
     }
 
-    static void release(void *ptr, nixl_mem_t mem_type)
+    static void release(void *ptr, nixlMemType mem_type)
     {
         switch (mem_type) {
         case DRAM_SEG:
@@ -98,7 +98,7 @@ protected:
     static nixlAgentConfig getConfig(int listen_port)
     {
         return nixlAgentConfig(true, listen_port > 0, listen_port,
-                               nixl_thread_sync_t::NIXL_THREAD_SYNC_RW, 0,
+                               nixlThreadSync::NIXL_THREAD_SYNC_RW, 0,
                                100000);
     }
 
@@ -107,9 +107,9 @@ protected:
         return 9000 + i;
     }
 
-    nixl_b_params_t getBackendParams()
+    nixlBParams getBackendParams()
     {
-        nixl_b_params_t params;
+        nixlBParams params;
 
         if (getBackendName() == "UCX" || getBackendName() == "UCX_MO") {
             params["num_workers"] = "2";
@@ -129,7 +129,7 @@ protected:
             agents.emplace_back(std::make_unique<nixlAgent>(getAgentName(i),
                                                             getConfig(getPort(i))));
             nixlBackendH *backend_handle = nullptr;
-            nixl_status_t status = agents.back()->createBackend(
+            nixlStatus status = agents.back()->createBackend(
                     getBackendName(), getBackendParams(), backend_handle);
             ASSERT_EQ(status, NIXL_SUCCESS);
             EXPECT_NE(backend_handle, nullptr);
@@ -146,16 +146,16 @@ protected:
         return GetParam();
     }
 
-    static nixl_opt_args_t extra_params_ip(int remote)
+    static nixlAgentOptionalArgs extra_params_ip(int remote)
     {
-        nixl_opt_args_t extra_params;
+        nixlAgentOptionalArgs extra_params;
 
         extra_params.ipAddr = "127.0.0.1";
         extra_params.port   = getPort(remote);
         return extra_params;
     }
 
-    nixl_status_t fetchRemoteMD(int local = 0, int remote = 1)
+    nixlStatus fetchRemoteMD(int local = 0, int remote = 1)
     {
         auto extra_params = extra_params_ip(remote);
 
@@ -163,15 +163,15 @@ protected:
                                             &extra_params);
     }
 
-    nixl_status_t checkRemoteMD(int local = 0, int remote = 1)
+    nixlStatus checkRemoteMD(int local = 0, int remote = 1)
     {
-        nixl_xfer_dlist_t descs(DRAM_SEG);
+        nixlXferDlist descs(DRAM_SEG);
         return agents[local]->checkRemoteMD(getAgentName(remote), descs);
     }
 
     template<typename Desc>
     nixlDescList<Desc>
-    makeDescList(const std::vector<MemBuffer> &buffers, nixl_mem_t mem_type)
+    makeDescList(const std::vector<MemBuffer> &buffers, nixlMemType mem_type)
     {
         nixlDescList<Desc> desc_list(mem_type);
         for (const auto &buffer : buffers) {
@@ -181,7 +181,7 @@ protected:
     }
 
     void registerMem(nixlAgent &agent, const std::vector<MemBuffer> &buffers,
-                     nixl_mem_t mem_type)
+                     nixlMemType mem_type)
     {
         auto reg_list = makeDescList<nixlBlobDesc>(buffers, mem_type);
         agent.registerMem(reg_list);
@@ -217,8 +217,8 @@ protected:
     {
         // Connect the existing agents and exchange metadata
         for (size_t i = 0; i < agents.size(); i++) {
-            nixl_blob_t md;
-            nixl_status_t status = agents[i]->getLocalMD(md);
+            nixlBlob md;
+            nixlStatus status = agents[i]->getLocalMD(md);
             ASSERT_EQ(status, NIXL_SUCCESS);
 
             for (size_t j = 0; j < agents.size(); j++) {
@@ -239,7 +239,7 @@ protected:
             for (size_t j = 0; j < agents.size(); j++) {
                 if (i == j)
                     continue;
-                nixl_status_t status = agents[j]->invalidateRemoteMD(
+                nixlStatus status = agents[j]->invalidateRemoteMD(
                         getAgentName(i));
                 ASSERT_EQ(status, NIXL_SUCCESS);
             }
@@ -249,11 +249,11 @@ protected:
     void waitForXfer(nixlAgent &from, const std::string &from_name,
                      nixlAgent &to, nixlXferReqH *xfer_req)
     {
-        nixl_notifs_t notif_map;
+        nixlNotifs notif_map;
         bool xfer_done;
         do {
             // progress on "from" agent while waiting for notification
-            nixl_status_t status = from.getXferStatus(xfer_req);
+            nixlStatus status = from.getXferStatus(xfer_req);
             EXPECT_TRUE((status == NIXL_SUCCESS) || (status == NIXL_IN_PROG));
             xfer_done = (status == NIXL_SUCCESS);
 
@@ -270,7 +270,7 @@ protected:
 
     void createRegisteredMem(nixlAgent& agent,
                              size_t size, size_t count,
-                             nixl_mem_t mem_type,
+                             nixlMemType mem_type,
                              std::vector<MemBuffer>& out)
     {
         while (count-- != 0) {
@@ -282,10 +282,10 @@ protected:
 
     void verifyNotifs(nixlAgent &agent, const std::string &from_name, size_t expected_count)
     {
-        nixl_notifs_t notif_map;
+        nixlNotifs notif_map;
 
         for (int i = 0; i < retry_count; i++) {
-            nixl_status_t status = agent.getNotifs(notif_map);
+            nixlStatus status = agent.getNotifs(notif_map);
             ASSERT_EQ(status, NIXL_SUCCESS);
 
             if (notif_map[from_name].size() >= expected_count) {
@@ -317,7 +317,7 @@ protected:
         for (size_t thread = 0; thread < num_threads; ++thread) {
             threads.emplace_back([&]() {
                 for (size_t i = 0; i < repeat; ++i) {
-                    nixl_status_t status = from.genNotif(to_name, NOTIF_MSG);
+                    nixlStatus status = from.genNotif(to_name, NOTIF_MSG);
                     ASSERT_EQ(status, NIXL_SUCCESS);
                 }
             });
@@ -335,21 +335,21 @@ protected:
     void doTransfer(nixlAgent &from, const std::string &from_name,
                     nixlAgent &to, const std::string &to_name, size_t size,
                     size_t count, size_t repeat, size_t num_threads,
-                    nixl_mem_t src_mem_type,
+                    nixlMemType src_mem_type,
                     std::vector<MemBuffer> src_buffers,
-                    nixl_mem_t dst_mem_type,
+                    nixlMemType dst_mem_type,
                     std::vector<MemBuffer> dst_buffers)
     {
         std::mutex logger_mutex;
         std::vector<std::thread> threads;
         for (size_t thread = 0; thread < num_threads; ++thread) {
             threads.emplace_back([&, thread]() {
-                nixl_opt_args_t extra_params;
+                nixlAgentOptionalArgs extra_params;
                 extra_params.hasNotif = true;
                 extra_params.notifMsg = NOTIF_MSG;
 
                 nixlXferReqH *xfer_req = nullptr;
-                nixl_status_t status = from.createXferReq(
+                nixlStatus status = from.createXferReq(
                         NIXL_WRITE,
                         makeDescList<nixlBasicDesc>(src_buffers, src_mem_type),
                         makeDescList<nixlBasicDesc>(dst_buffers, dst_mem_type), to_name,
@@ -450,7 +450,7 @@ TEST_P(TestTransfer, remoteMDFromSocket)
     std::vector<MemBuffer> src_buffers, dst_buffers;
     constexpr size_t size = 16 * 1024;
     constexpr size_t count = 4;
-    nixl_mem_t mem_type = m_cuda_device? VRAM_SEG : DRAM_SEG;
+    nixlMemType mem_type = m_cuda_device? VRAM_SEG : DRAM_SEG;
 
     createRegisteredMem(getAgent(0), size, count, mem_type, src_buffers);
     createRegisteredMem(getAgent(1), size, count, mem_type, dst_buffers);

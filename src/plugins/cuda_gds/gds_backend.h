@@ -33,7 +33,7 @@ class nixlGdsMetadata : public nixlBackendMD {
     public:
         gdsFileHandle handle;
         gdsMemBuf buf;
-        nixl_mem_t type;
+        nixlMemType type;
 
         nixlGdsMetadata() : nixlBackendMD(true) { }
         ~nixlGdsMetadata() { }
@@ -97,10 +97,10 @@ class nixlGdsEngine : public nixlBackendEngine {
 
         nixlGdsIOBatch* getBatchFromPool(unsigned int size) const;
         void returnBatchToPool(nixlGdsIOBatch* batch) const;
-        nixl_status_t createAndSubmitBatch(const std::vector<GdsTransferRequestH>& requests,
+        nixlStatus createAndSubmitBatch(const std::vector<GdsTransferRequestH>& requests,
                                            size_t start_idx, size_t batch_size,
                                            std::vector<nixlGdsIOBatch*>& batch_list) const;
-        nixl_status_t createBatches(const nixl_xfer_op_t &operation,
+        nixlStatus createBatches(const nixlXferOp &operation,
                                    const nixl_meta_dlist_t &local,
                                    const nixl_meta_dlist_t &remote,
                                    nixlGdsBackendReqH* gds_handle);
@@ -125,51 +125,51 @@ class nixlGdsEngine : public nixlBackendEngine {
             return false;
         }
 
-        nixl_mem_list_t getSupportedMems() const {
-            nixl_mem_list_t mems;
+        nixlMemList getSupportedMems() const {
+            nixlMemList mems;
             mems.push_back(DRAM_SEG);
             mems.push_back(VRAM_SEG);
             mems.push_back(FILE_SEG);
             return mems;
         }
 
-        nixl_status_t connect(const std::string &remote_agent) {
+        nixlStatus connect(const std::string &remote_agent) {
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t disconnect(const std::string &remote_agent) {
+        nixlStatus disconnect(const std::string &remote_agent) {
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t loadLocalMD(nixlBackendMD* input,
+        nixlStatus loadLocalMD(nixlBackendMD* input,
                                  nixlBackendMD* &output) {
             output = input;
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t unloadMD(nixlBackendMD* input) {
+        nixlStatus unloadMD(nixlBackendMD* input) {
             return NIXL_SUCCESS;
         }
-        nixl_status_t registerMem(const nixlBlobDesc &mem,
-                                 const nixl_mem_t &nixl_mem,
+        nixlStatus registerMem(const nixlBlobDesc &mem,
+                                 const nixlMemType &nixl_mem,
                                  nixlBackendMD* &out);
-        nixl_status_t deregisterMem(nixlBackendMD *meta);
+        nixlStatus deregisterMem(nixlBackendMD *meta);
 
-        nixl_status_t prepXfer(const nixl_xfer_op_t &operation,
+        nixlStatus prepXfer(const nixlXferOp &operation,
                               const nixl_meta_dlist_t &local,
                               const nixl_meta_dlist_t &remote,
                               const std::string &remote_agent,
                               nixlBackendReqH* &handle,
                               const nixl_opt_b_args_t* opt_args=nullptr) const;
 
-        nixl_status_t postXfer(const nixl_xfer_op_t &operation,
+        nixlStatus postXfer(const nixlXferOp &operation,
                               const nixl_meta_dlist_t &local,
                               const nixl_meta_dlist_t &remote,
                               const std::string &remote_agent,
                               nixlBackendReqH* &handle,
                               const nixl_opt_b_args_t* opt_args=nullptr) const;
 
-        nixl_status_t checkXfer(nixlBackendReqH* handle) const;
-        nixl_status_t releaseReqH(nixlBackendReqH* handle) const;
+        nixlStatus checkXfer(nixlBackendReqH* handle) const;
+        nixlStatus releaseReqH(nixlBackendReqH* handle) const;
 };
 #endif

@@ -41,7 +41,7 @@ namespace {
 
     template <typename Mode>
     struct funcImpl<Mode, std::enable_if_t<std::is_same<Mode, uringEnabled>::value>> {
-        static std::unique_ptr<nixlPosixQueue> createUringQueue(int num_entries, nixl_xfer_op_t operation) {
+        static std::unique_ptr<nixlPosixQueue> createUringQueue(int num_entries, nixlXferOp operation) {
             // Initialize io_uring parameters with basic configuration
             // Start with basic parameters, no special flags
             // We can add optimizations like SQPOLL later
@@ -56,7 +56,7 @@ namespace {
 
     template <typename Mode>
     struct funcImpl<Mode, std::enable_if_t<std::is_same<Mode, uringDisabled>::value>> {
-        static std::unique_ptr<nixlPosixQueue> createUringQueue(int num_entries, nixl_xfer_op_t operation) {
+        static std::unique_ptr<nixlPosixQueue> createUringQueue(int num_entries, nixlXferOp operation) {
             (void)num_entries;
             (void)operation;
             throw nixlPosixBackendReqH::exception("Attempting to create io_uring queue when support is not compiled in",
@@ -70,11 +70,11 @@ namespace {
 }
 
 // Public functions implementation
-std::unique_ptr<nixlPosixQueue> QueueFactory::createAioQueue(int num_entries, nixl_xfer_op_t operation) {
+std::unique_ptr<nixlPosixQueue> QueueFactory::createAioQueue(int num_entries, nixlXferOp operation) {
     return std::make_unique<aioQueue>(num_entries, operation);
 }
 
-std::unique_ptr<nixlPosixQueue> QueueFactory::createUringQueue(int num_entries, nixl_xfer_op_t operation) {
+std::unique_ptr<nixlPosixQueue> QueueFactory::createUringQueue(int num_entries, nixlXferOp operation) {
     return funcImpl<uringMode>::createUringQueue(num_entries, operation);
 }
 

@@ -57,55 +57,55 @@ public:
         return false;
     }
 
-    nixl_mem_list_t
+    nixlMemList
     getSupportedMems() const override {
         return {DRAM_SEG, VRAM_SEG, FILE_SEG};
     }
 
-    nixl_status_t
+    nixlStatus
     connect (const std::string &remote_agent) override {
         return NIXL_SUCCESS;
     }
 
-    nixl_status_t
+    nixlStatus
     disconnect (const std::string &remote_agent) override {
         return NIXL_SUCCESS;
     }
 
-    nixl_status_t
+    nixlStatus
     loadLocalMD (nixlBackendMD *input, nixlBackendMD *&output) override {
         output = input;
         return NIXL_SUCCESS;
     }
 
-    nixl_status_t
+    nixlStatus
     unloadMD (nixlBackendMD *input) override {
         return NIXL_SUCCESS;
     }
-    nixl_status_t
-    registerMem (const nixlBlobDesc &mem, const nixl_mem_t &nixl_mem, nixlBackendMD *&out) override;
-    nixl_status_t
+    nixlStatus
+    registerMem (const nixlBlobDesc &mem, const nixlMemType &nixl_mem, nixlBackendMD *&out) override;
+    nixlStatus
     deregisterMem (nixlBackendMD *meta) override;
 
-    nixl_status_t
-    prepXfer (const nixl_xfer_op_t &operation,
+    nixlStatus
+    prepXfer (const nixlXferOp &operation,
               const nixl_meta_dlist_t &local,
               const nixl_meta_dlist_t &remote,
               const std::string &remote_agent,
               nixlBackendReqH *&handle,
               const nixl_opt_b_args_t *opt_args = nullptr) const override;
 
-    nixl_status_t
-    postXfer (const nixl_xfer_op_t &operation,
+    nixlStatus
+    postXfer (const nixlXferOp &operation,
               const nixl_meta_dlist_t &local,
               const nixl_meta_dlist_t &remote,
               const std::string &remote_agent,
               nixlBackendReqH *&handle,
               const nixl_opt_b_args_t *opt_args = nullptr) const override;
 
-    nixl_status_t
+    nixlStatus
     checkXfer (nixlBackendReqH *handle) const override;
-    nixl_status_t
+    nixlStatus
     releaseReqH (nixlBackendReqH *handle) const override;
 
 private:

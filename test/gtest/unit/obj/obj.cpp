@@ -95,7 +95,7 @@ protected:
     std::unique_ptr<nixlObjEngine> objEngine_;
     std::shared_ptr<MockS3Client> mockS3Client_;
     nixlBackendInitParams initParams_;
-    nixl_b_params_t customParams_;
+    nixlBParams customParams_;
 
     void
     SetUp() override {
@@ -104,7 +104,7 @@ protected:
         initParams_.customParams = &customParams_;
         initParams_.enableProgTh = false;
         initParams_.pthrDelay = 0;
-        initParams_.syncMode = nixl_thread_sync_t::NIXL_THREAD_SYNC_RW;
+        initParams_.syncMode = nixlThreadSync::NIXL_THREAD_SYNC_RW;
 
         mockS3Client_ = std::make_shared<MockS3Client>();
 
@@ -114,7 +114,7 @@ protected:
     }
 
     void
-    testAsyncTransferWithControlledExecution(nixl_xfer_op_t operation) {
+    testAsyncTransferWithControlledExecution(nixlXferOp operation) {
         mockS3Client_->setSimulateSuccess(true);
 
         nixlBlobDesc local_desc, remote_desc;
@@ -148,7 +148,7 @@ protected:
             NIXL_SUCCESS);
         ASSERT_NE(handle, nullptr);
 
-        nixl_status_t status = objEngine_->postXfer(
+        nixlStatus status = objEngine_->postXfer(
             operation, local_descs, remote_descs, initParams_.localAgent, handle, nullptr);
         EXPECT_EQ(status, NIXL_IN_PROG);
         EXPECT_EQ(mockS3Client_->getPendingCount(), 1);
@@ -169,7 +169,7 @@ protected:
     }
 
     void
-    testMultiDescriptorTransfer(nixl_xfer_op_t operation) {
+    testMultiDescriptorTransfer(nixlXferOp operation) {
         mockS3Client_->setSimulateSuccess(true);
 
         std::vector<char> test_buffer0(1024);
@@ -218,7 +218,7 @@ protected:
             NIXL_SUCCESS);
         ASSERT_NE(handle, nullptr);
 
-        nixl_status_t status = objEngine_->postXfer(
+        nixlStatus status = objEngine_->postXfer(
             operation, local_descs, remote_descs, initParams_.localAgent, handle, nullptr);
         EXPECT_EQ(status, NIXL_IN_PROG);
         EXPECT_EQ(mockS3Client_->getPendingCount(), 2);
@@ -242,7 +242,7 @@ protected:
     }
 
     void
-    testAsyncTransferFailureIsHandled(nixl_xfer_op_t operation) {
+    testAsyncTransferFailureIsHandled(nixlXferOp operation) {
         mockS3Client_->setSimulateSuccess(false);
 
         std::vector<char> test_buffer(1024, 'Z');
@@ -274,7 +274,7 @@ protected:
             NIXL_SUCCESS);
         ASSERT_NE(handle, nullptr);
 
-        nixl_status_t status = objEngine_->postXfer(
+        nixlStatus status = objEngine_->postXfer(
             operation, local_descs, remote_descs, initParams_.localAgent, handle, nullptr);
         EXPECT_EQ(status, NIXL_IN_PROG);
         EXPECT_EQ(mockS3Client_->getPendingCount(), 1);
@@ -318,7 +318,7 @@ TEST_F(ObjTestFixture, RegisterMemoryObjSeg) {
     mem_desc.metaInfo = "test-object-key";
 
     nixlBackendMD *metadata = nullptr;
-    nixl_status_t status = objEngine_->registerMem(mem_desc, OBJ_SEG, metadata);
+    nixlStatus status = objEngine_->registerMem(mem_desc, OBJ_SEG, metadata);
 
     EXPECT_EQ(status, NIXL_SUCCESS);
     EXPECT_NE(metadata, nullptr);
@@ -333,7 +333,7 @@ TEST_F(ObjTestFixture, RegisterMemoryObjSegWithoutKey) {
     mem_desc.metaInfo = ""; // Empty key - engine will generate a key
 
     nixlBackendMD *metadata = nullptr;
-    nixl_status_t status = objEngine_->registerMem(mem_desc, OBJ_SEG, metadata);
+    nixlStatus status = objEngine_->registerMem(mem_desc, OBJ_SEG, metadata);
 
     EXPECT_EQ(status, NIXL_SUCCESS);
     EXPECT_NE(metadata, nullptr);
@@ -347,7 +347,7 @@ TEST_F(ObjTestFixture, RegisterMemoryDramSeg) {
     mem_desc.devId = 123;
 
     nixlBackendMD *metadata = nullptr;
-    nixl_status_t status = objEngine_->registerMem(mem_desc, DRAM_SEG, metadata);
+    nixlStatus status = objEngine_->registerMem(mem_desc, DRAM_SEG, metadata);
 
     EXPECT_EQ(status, NIXL_SUCCESS);
     EXPECT_EQ(metadata, nullptr);
@@ -388,7 +388,7 @@ TEST_F(ObjTestFixture, CancelTransfer) {
               NIXL_SUCCESS);
     ASSERT_NE(handle, nullptr);
 
-    nixl_status_t status = objEngine_->postXfer(
+    nixlStatus status = objEngine_->postXfer(
         NIXL_WRITE, local_descs, remote_descs, initParams_.localAgent, handle, nullptr);
     EXPECT_EQ(status, NIXL_IN_PROG);
     EXPECT_EQ(mockS3Client_->getPendingCount(), 1);
@@ -444,7 +444,7 @@ TEST_F(ObjTestFixture, ReadFromOffset) {
               NIXL_SUCCESS);
     ASSERT_NE(handle, nullptr);
 
-    nixl_status_t status = objEngine_->postXfer(
+    nixlStatus status = objEngine_->postXfer(
         NIXL_READ, local_descs, remote_descs, initParams_.localAgent, handle, nullptr);
     EXPECT_EQ(status, NIXL_IN_PROG);
     EXPECT_EQ(mockS3Client_->getPendingCount(), 1);

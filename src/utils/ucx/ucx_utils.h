@@ -76,14 +76,14 @@ private:
     nixl_ucx_ep_state_t state{NIXL_UCX_EP_STATE_NULL};
 
     void setState(nixl_ucx_ep_state_t new_state);
-    nixl_status_t closeImpl(ucp_ep_close_flags_t flags);
+    nixlStatus closeImpl(ucp_ep_close_flags_t flags);
 
     /* Connection */
-    nixl_status_t disconnect_nb();
+    nixlStatus disconnect_nb();
 public:
     void err_cb(ucp_ep_h ucp_ep, ucs_status_t status);
 
-    nixl_status_t checkTxState() const {
+    nixlStatus checkTxState() const {
         switch (state) {
         case NIXL_UCX_EP_STATE_CONNECTED:
             return NIXL_SUCCESS;
@@ -102,31 +102,31 @@ public:
     nixlUcxEp& operator=(const nixlUcxEp&) = delete;
 
     /* Active message handling */
-    nixl_status_t sendAm(unsigned msg_id,
+    nixlStatus sendAm(unsigned msg_id,
                          void* hdr, size_t hdr_len,
                          void* buffer, size_t len,
                          uint32_t flags, nixlUcxReq &req);
 
     /* Data access */
-    [[nodiscard]] nixl_status_t
+    [[nodiscard]] nixlStatus
     read(uint64_t raddr,
          const nixl::ucx::rkey &rkey,
          void *laddr,
          nixlUcxMem &mem,
          size_t size,
          nixlUcxReq &req);
-    [[nodiscard]] nixl_status_t
+    [[nodiscard]] nixlStatus
     write(void *laddr,
           nixlUcxMem &mem,
           uint64_t raddr,
           const nixl::ucx::rkey &rkey,
           size_t size,
           nixlUcxReq &req);
-    nixl_status_t estimateCost(size_t size,
+    nixlStatus estimateCost(size_t size,
                                std::chrono::microseconds &duration,
                                std::chrono::microseconds &err_margin,
-                               nixl_cost_t &method);
-    nixl_status_t flushEp(nixlUcxReq &req);
+                               nixlCost &method);
+    nixlStatus flushEp(nixlUcxReq &req);
 
     [[nodiscard]] ucp_ep_h
     getEp() const noexcept {
@@ -159,11 +159,11 @@ public:
                    req_cb_t fini_cb,
                    bool prog_thread,
                    unsigned long num_workers,
-                   nixl_thread_sync_t sync_mode);
+                   nixlThreadSync sync_mode);
     ~nixlUcxContext();
 
     /* Memory management */
-    int memReg(void *addr, size_t size, nixlUcxMem &mem, nixl_mem_t nixl_mem_type);
+    int memReg(void *addr, size_t size, nixlUcxMem &mem, nixlMemType nixlMemTypeype);
     [[nodiscard]] std::string packRkey(nixlUcxMem &mem);
     void memDereg(nixlUcxMem &mem);
 
@@ -192,12 +192,12 @@ public:
 
     /* Data access */
     int progress();
-    [[nodiscard]] nixl_status_t test(nixlUcxReq req);
+    [[nodiscard]] nixlStatus test(nixlUcxReq req);
 
     void reqRelease(nixlUcxReq req);
     void reqCancel(nixlUcxReq req);
 
-    [[nodiscard]] nixl_status_t
+    [[nodiscard]] nixlStatus
     arm() const noexcept;
 
     [[nodiscard]] int
@@ -211,10 +211,10 @@ private:
     ucp_err_handling_mode_t err_handling_mode_;
 };
 
-[[nodiscard]] nixl_b_params_t
+[[nodiscard]] nixlBParams
 get_ucx_backend_common_options();
 
-nixl_status_t ucx_status_to_nixl(ucs_status_t status);
+nixlStatus ucx_status_to_nixl(ucs_status_t status);
 
 [[nodiscard]] std::string_view
 ucx_err_mode_to_string(ucp_err_handling_mode_t t);

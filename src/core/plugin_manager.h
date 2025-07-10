@@ -48,8 +48,8 @@ public:
     void destroyEngine(nixlBackendEngine* engine) const;
     const char* getName() const;
     const char* getVersion() const;
-    nixl_b_params_t getBackendOptions() const;
-    nixl_mem_list_t getBackendMems() const;
+    nixlBParams getBackendOptions() const;
+    nixlMemList getBackendMems() const;
 };
 
 // Creator Function for static plugins
@@ -63,7 +63,7 @@ struct nixlStaticPluginInfo {
 
 class nixlPluginManager {
 private:
-    std::map<nixl_backend_t, std::shared_ptr<const nixlPluginHandle>> loaded_plugins_;
+    std::map<nixlBackend, std::shared_ptr<const nixlPluginHandle>> loaded_plugins_;
     std::vector<std::string> plugin_dirs_;
     std::vector<nixlStaticPluginInfo> static_plugins_;
     std::mutex lock;
@@ -87,22 +87,22 @@ public:
     void loadPluginsFromList(const std::string& filename);
 
     // Load a specific plugin
-    std::shared_ptr<const nixlPluginHandle> loadPlugin(const nixl_backend_t& plugin_name);
+    std::shared_ptr<const nixlPluginHandle> loadPlugin(const nixlBackend& plugin_name);
 
     // Search a directory for plugins
     void discoverPluginsFromDir(const std::string& dirpath);
 
     // Unload a plugin
-    void unloadPlugin(const nixl_backend_t& plugin_name);
+    void unloadPlugin(const nixlBackend& plugin_name);
 
     // Get a plugin handle
-    std::shared_ptr<const nixlPluginHandle> getPlugin(const nixl_backend_t& plugin_name);
+    std::shared_ptr<const nixlPluginHandle> getPlugin(const nixlBackend& plugin_name);
 
     // Get all loaded plugin names
-    std::vector<nixl_backend_t> getLoadedPluginNames();
+    std::vector<nixlBackend> getLoadedPluginNames();
 
     // Get backend options
-    nixl_b_params_t getBackendOptions(const nixl_backend_t& type);
+    nixlBParams getBackendOptions(const nixlBackend& type);
 
     // Add a plugin directory
     void addPluginDirectory(const std::string& directory);

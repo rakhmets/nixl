@@ -47,11 +47,11 @@ void test_side_perf(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend, nixlBac
     int n_mems = 32;
     int descs_per_mem = 64*1024;
     int n_iters = 10;
-    nixl_reg_dlist_t mem_list1(DRAM_SEG), mem_list2(DRAM_SEG);
-    nixl_xfer_dlist_t src_list(DRAM_SEG), dst_list(DRAM_SEG);
-    nixl_status_t status;
+    nixlRegDlist mem_list1(DRAM_SEG), mem_list2(DRAM_SEG);
+    nixlXferDlist src_list(DRAM_SEG), dst_list(DRAM_SEG);
+    nixlStatus status;
 
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
     extra_params1.backends.push_back(backend);
     extra_params2.backends.push_back(backend2);
 
@@ -172,11 +172,11 @@ void test_side_perf(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend, nixlBac
     free(dst_buf);
 }
 
-nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1, nixlBackendH* backend2) {
+nixlStatus partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1, nixlBackendH* backend2) {
     std::cout << "Starting partialMdTest\n";
 
-    nixl_status_t status;
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlStatus status;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
     extra_params1.backends.push_back(backend1);
     extra_params2.backends.push_back(backend2);
 
@@ -189,8 +189,8 @@ nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1
     void* dst_bufs[NUM_UPDATES][NUM_BUFFERS];
 
     // Create mem_lists for updates - using std::vector instead of C-style arrays
-    std::vector<nixl_reg_dlist_t> src_mem_lists(NUM_UPDATES, nixl_reg_dlist_t(DRAM_SEG));
-    std::vector<nixl_reg_dlist_t> dst_mem_lists(NUM_UPDATES, nixl_reg_dlist_t(DRAM_SEG));
+    std::vector<nixlRegDlist> src_mem_lists(NUM_UPDATES, nixlRegDlist(DRAM_SEG));
+    std::vector<nixlRegDlist> dst_mem_lists(NUM_UPDATES, nixlRegDlist(DRAM_SEG));
 
     // Allocate buffers and create memory descriptors
     for (int update_idx = 0; update_idx < NUM_UPDATES; update_idx++) {
@@ -225,7 +225,7 @@ nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1
     // Invalidate it just in case but don't care either way.
     A1->invalidateRemoteMD(agent2);
 
-    nixl_reg_dlist_t empty_dlist(DRAM_SEG);
+    nixlRegDlist empty_dlist(DRAM_SEG);
     std::string partial_meta;
     status = A2->getLocalPartialMD(empty_dlist, partial_meta, NULL);
     assert(status == NIXL_SUCCESS);
@@ -284,11 +284,11 @@ nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1
     }
 
     // Prepare transfer dlists of all descriptors and buffers
-    nixl_xfer_dlist_t src_xfer_list(DRAM_SEG), dst_xfer_list(DRAM_SEG);
+    nixlXferDlist src_xfer_list(DRAM_SEG), dst_xfer_list(DRAM_SEG);
 
     for (int update_idx = 0; update_idx < NUM_UPDATES; update_idx++) {
-        nixl_xfer_dlist_t tmp_src_list = src_mem_lists[update_idx].trim();
-        nixl_xfer_dlist_t tmp_dst_list = dst_mem_lists[update_idx].trim();
+        nixlXferDlist tmp_src_list = src_mem_lists[update_idx].trim();
+        nixlXferDlist tmp_dst_list = dst_mem_lists[update_idx].trim();
 
         for (int buf_idx = 0; buf_idx < NUM_BUFFERS; buf_idx++) {
             src_xfer_list.addDesc(tmp_src_list[buf_idx]);
@@ -321,7 +321,7 @@ nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1
     status = A1->makeXferReq(NIXL_WRITE, src_side, indices, dst_side, indices, req, &extra_params1);
     assert(status == NIXL_SUCCESS);
 
-    nixl_status_t xfer_status = A1->postXferReq(req);
+    nixlStatus xfer_status = A1->postXferReq(req);
 
     // Wait for transfer completion
     while (xfer_status != NIXL_SUCCESS) {
@@ -369,13 +369,13 @@ nixl_status_t partialMdTest(nixlAgent* A1, nixlAgent* A2, nixlBackendH* backend1
     return NIXL_SUCCESS;
 }
 
-nixl_status_t sideXferTest(nixlAgent* A1, nixlAgent* A2, nixlXferReqH* src_handle, nixlBackendH* dst_backend) {
+nixlStatus sideXferTest(nixlAgent* A1, nixlAgent* A2, nixlXferReqH* src_handle, nixlBackendH* dst_backend) {
     std::cout << "Starting sideXferTest\n";
 
     nixlBackendH* src_backend;
-    nixl_status_t status = A1->queryXferBackend(src_handle, src_backend);
+    nixlStatus status = A1->queryXferBackend(src_handle, src_backend);
 
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
     extra_params1.backends.push_back(src_backend);
     extra_params2.backends.push_back(dst_backend);
 
@@ -390,8 +390,8 @@ nixl_status_t sideXferTest(nixlAgent* A1, nixlAgent* A2, nixlXferReqH* src_handl
     size_t len = 1024;
     void* src_bufs[n_bufs], *dst_bufs[n_bufs];
 
-    nixl_reg_dlist_t mem_list1(DRAM_SEG), mem_list2(DRAM_SEG);
-    nixl_xfer_dlist_t src_list(DRAM_SEG), dst_list(DRAM_SEG);
+    nixlRegDlist mem_list1(DRAM_SEG), mem_list2(DRAM_SEG);
+    nixlXferDlist src_list(DRAM_SEG), dst_list(DRAM_SEG);
     nixlBlobDesc src_desc[4], dst_desc[4];
     for(int i = 0; i<n_bufs; i++) {
 
@@ -458,7 +458,7 @@ nixl_status_t sideXferTest(nixlAgent* A1, nixlAgent* A2, nixlXferReqH* src_handl
     status = A1->makeXferReq(NIXL_WRITE, src_side, indices1, dst_side, indices1, req1, &extra_params1);
     assert (status == NIXL_SUCCESS);
 
-    nixl_status_t xfer_status = A1->postXferReq(req1);
+    nixlStatus xfer_status = A1->postXferReq(req1);
 
     while (xfer_status != NIXL_SUCCESS) {
         if (xfer_status != NIXL_SUCCESS) xfer_status = A1->getXferStatus(req1);
@@ -528,7 +528,7 @@ nixl_status_t sideXferTest(nixlAgent* A1, nixlAgent* A2, nixlXferReqH* src_handl
     return NIXL_SUCCESS;
 }
 
-void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
+void printParams(const nixlBParams& params, const nixlMemList& mems) {
     if (params.empty()) {
         std::cout << "Parameters: (empty)" << std::endl;
         return;
@@ -552,28 +552,28 @@ void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
 
 int main()
 {
-    nixl_status_t ret1, ret2;
+    nixlStatus ret1, ret2;
     std::string ret_s1, ret_s2;
 
     // Example: assuming two agents running on the same machine,
     // with separate memory regions in DRAM
 
     nixlAgentConfig cfg(true);
-    nixl_b_params_t init1, init2;
-    nixl_mem_list_t mems1, mems2;
+    nixlBParams init1, init2;
+    nixlMemList mems1, mems2;
 
     // populate required/desired inits
     nixlAgent A1(agent1, cfg);
     nixlAgent A2(agent2, cfg);
 
-    std::vector<nixl_backend_t> plugins;
+    std::vector<nixlBackend> plugins;
 
     ret1 = A1.getAvailPlugins(plugins);
     assert (ret1 == NIXL_SUCCESS);
 
     std::cout << "Available plugins:\n";
 
-    for (nixl_backend_t b: plugins)
+    for (nixlBackend b: plugins)
         std::cout << b << "\n";
 
     ret1 = A1.getPluginParams("UCX", mems1, init1);
@@ -590,7 +590,7 @@ int main()
     ret1 = A1.createBackend("UCX", init1, ucx1);
     ret2 = A2.createBackend("UCX", init2, ucx2);
 
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
     extra_params1.backends.push_back(ucx1);
     extra_params2.backends.push_back(ucx2);
 
@@ -617,7 +617,7 @@ int main()
     // User allocates memories, and passes the corresponding address
     // and length to register with the backend
     nixlBlobDesc buff1, buff2, buff3;
-    nixl_reg_dlist_t dlist1(DRAM_SEG), dlist2(DRAM_SEG);
+    nixlRegDlist dlist1(DRAM_SEG), dlist2(DRAM_SEG);
     size_t len = 256;
     void* addr1 = calloc(1, len);
     void* addr2 = calloc(1, len);
@@ -671,21 +671,21 @@ int main()
     size_t req_size = 8;
     size_t dst_offset = 8;
 
-    nixl_xfer_dlist_t req_src_descs (DRAM_SEG);
+    nixlXferDlist req_src_descs (DRAM_SEG);
     nixlBasicDesc req_src;
     req_src.addr     = (uintptr_t) (((char*) addr1) + 16); //random offset
     req_src.len      = req_size;
     req_src.devId   = 0;
     req_src_descs.addDesc(req_src);
 
-    nixl_xfer_dlist_t req_dst_descs (DRAM_SEG);
+    nixlXferDlist req_dst_descs (DRAM_SEG);
     nixlBasicDesc req_dst;
     req_dst.addr   = (uintptr_t) ((char*) addr2) + dst_offset; //random offset
     req_dst.len    = req_size;
     req_dst.devId = 0;
     req_dst_descs.addDesc(req_dst);
 
-    nixl_xfer_dlist_t req_ldst_descs (DRAM_SEG);
+    nixlXferDlist req_ldst_descs (DRAM_SEG);
     nixlBasicDesc req_ldst;
     req_ldst.addr   = (uintptr_t) ((char*) addr3) + dst_offset; //random offset
     req_ldst.len    = req_size;
@@ -700,11 +700,11 @@ int main()
     ret1 = A1.createXferReq(NIXL_WRITE, req_src_descs, req_dst_descs, agent2, req_handle, &extra_params1);
     assert (ret1 == NIXL_SUCCESS);
 
-    nixl_status_t status = A1.postXferReq(req_handle);
+    nixlStatus status = A1.postXferReq(req_handle);
 
     std::cout << "Transfer was posted\n";
 
-    nixl_notifs_t notif_map;
+    nixlNotifs notif_map;
     int n_notifs = 0;
 
     while (status != NIXL_SUCCESS || n_notifs == 0) {

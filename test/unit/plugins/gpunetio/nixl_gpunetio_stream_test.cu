@@ -197,20 +197,20 @@ allBytesAre (void *buffer, size_t size, uint8_t value) {
 int
 main (int argc, char *argv[]) {
     int peer_port;
-    nixl_status_t ret = NIXL_SUCCESS;
+    nixlStatus ret = NIXL_SUCCESS;
     uint8_t *data_address;
     std::string role;
     std::string stream_mode;
     const char *peer_ip;
-    nixl_blob_t remote_desc;
-    nixl_blob_t metadata;
-    nixl_blob_t remote_metadata;
+    nixlBlob remote_desc;
+    nixlBlob metadata;
+    nixlBlob remote_metadata;
     int status = 0;
     static std::string target ("target");
     static std::string initiator ("initiator");
 
     /** NIXL declarations */
-    nixl_b_params_t params;
+    nixlBParams params;
     nixlBackendH *gpunetio;
     cudaStream_t stream;
     /** Serialization/Deserialization object to create a blob */
@@ -218,11 +218,11 @@ main (int argc, char *argv[]) {
     nixlSerDes *remote_serdes = new nixlSerDes();
 
     /** Descriptors and Transfer Request */
-    nixl_xfer_dlist_t local_vram (VRAM_SEG);
-    nixl_reg_dlist_t local_vram_rdlist (VRAM_SEG);
+    nixlXferDlist local_vram (VRAM_SEG);
+    nixlRegDlist local_vram_rdlist (VRAM_SEG);
     nixlBlobDesc temp;
     nixlXferReqH *treq;
-    nixl_notifs_t notifs;
+    nixlNotifs notifs;
     size_t buf_size = SIZE;
     uint32_t buf_num = TRANSFER_NUM_BUFFER;
     uintptr_t data_address_ptr;
@@ -263,7 +263,7 @@ main (int argc, char *argv[]) {
     std::cout << "Starting Agent for " << role << " with stream mode " << stream_mode << "\n";
     /** Agent and backend creation parameters */
 
-    nixlAgentConfig cfg (true, true, peer_port, nixl_thread_sync_t::NIXL_THREAD_SYNC_STRICT);
+    nixlAgentConfig cfg (true, true, peer_port, nixlThreadSync::NIXL_THREAD_SYNC_STRICT);
     nixlAgent agent (role, cfg);
 
     if (stream_mode.compare ("pool") == 0) params["cuda_streams"] = "2";
@@ -275,7 +275,7 @@ main (int argc, char *argv[]) {
     // check return
     POP_RANGE
 
-    nixl_opt_args_t extra_params;
+    nixlAgentOptionalArgs extra_params;
     extra_params.backends.push_back (gpunetio);
 
     checkCudaError (cudaMalloc (&data_address, SIZE * TRANSFER_NUM_BUFFER),
@@ -309,7 +309,7 @@ main (int argc, char *argv[]) {
     if (role == target) {
         bool found = false;
         // Not used
-        nixl_xfer_dlist_t descs (DRAM_SEG);
+        nixlXferDlist descs (DRAM_SEG);
         std::cout << target << " waiting checkRemoteMD from " << initiator << std::endl;
         while (agent.checkRemoteMD (initiator, descs) != NIXL_SUCCESS)
             ;
@@ -332,7 +332,7 @@ main (int argc, char *argv[]) {
 
         // First recv notif: initiator ack it connected correctly
         do {
-            nixl_status_t ret = agent.getNotifs (notifs);
+            nixlStatus ret = agent.getNotifs (notifs);
         } while (notifs.size() == 0);
 
         for (const auto &n : notifs) {
@@ -370,7 +370,7 @@ main (int argc, char *argv[]) {
                     }
                 }
             }
-            nixl_status_t ret = agent.getNotifs (notifs);
+            nixlStatus ret = agent.getNotifs (notifs);
         } while (found == false);
 
         // Cleanup all previous notifications
@@ -401,7 +401,7 @@ main (int argc, char *argv[]) {
                     }
                 }
             }
-            nixl_status_t ret = agent.getNotifs (notifs);
+            nixlStatus ret = agent.getNotifs (notifs);
         } while (found == false);
 
         cudaStreamDestroy (stream);
@@ -409,7 +409,7 @@ main (int argc, char *argv[]) {
         std::cout << "Exchange metadata with " << target << std::endl;
         std::cout << "\t -- To be handled by runtime - currently received via a TCP Stream\n";
 
-        nixl_opt_args_t md_extra_params;
+        nixlAgentOptionalArgs md_extra_params;
         md_extra_params.ipAddr = peer_ip;
         md_extra_params.port = peer_port;
 
@@ -418,14 +418,14 @@ main (int argc, char *argv[]) {
         ret = agent.sendLocalMD (&md_extra_params);
         assert (ret == NIXL_SUCCESS);
         // Not used
-        nixl_xfer_dlist_t descs (DRAM_SEG);
+        nixlXferDlist descs (DRAM_SEG);
         std::cout << initiator << " waiting checkRemoteMD from " << target << std::endl;
         while (agent.checkRemoteMD (target, descs) != NIXL_SUCCESS)
             ;
         std::cout << initiator << " received checkRemoteMD from " << target << std::endl;
 
         do {
-            nixl_status_t ret = agent.getNotifs (notifs);
+            nixlStatus ret = agent.getNotifs (notifs);
         } while (notifs.size() == 0);
 
         for (const auto &notif : notifs[target]) {
@@ -451,7 +451,7 @@ main (int argc, char *argv[]) {
         }
 
         std::cout << "Verify Deserialized Target's Desc List at Initiator\n";
-        nixl_xfer_dlist_t remote_vram_list (VRAM_SEG);
+        nixlXferDlist remote_vram_list (VRAM_SEG);
 
         for (uint32_t i = 0; i < buf_num; i++) {
             temp.addr = (uintptr_t)(data_address_ptr + (i * buf_size));
@@ -516,7 +516,7 @@ main (int argc, char *argv[]) {
             // First recv notif: target processed previously sent data
             std::cout << "Waiting from 'processed' ack from" << target << std::endl;
             do {
-                nixl_status_t ret = agent.getNotifs (notifs);
+                nixlStatus ret = agent.getNotifs (notifs);
             } while (notifs.size() == 0);
 
             for (const auto &n : notifs) {
@@ -572,7 +572,7 @@ main (int argc, char *argv[]) {
             // First recv notif: target processed previously sent data
             std::cout << "Waiting from 'processed' ack from" << target << std::endl;
             do {
-                nixl_status_t ret = agent.getNotifs (notifs);
+                nixlStatus ret = agent.getNotifs (notifs);
             } while (notifs.size() == 0);
 
             for (const auto &n : notifs) {

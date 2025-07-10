@@ -239,13 +239,13 @@ int main(int argc, char *argv[])
 
     // Initialize NIXL components
     nixlAgentConfig   cfg(true);
-    nixl_b_params_t   params;
+    nixlBParams   params;
     nixlBackendH      *hf3fs;
-    nixl_reg_dlist_t  file_for_hf3fs(FILE_SEG);
-    nixl_reg_dlist_t  dram_for_hf3fs(DRAM_SEG);
+    nixlRegDlist  file_for_hf3fs(FILE_SEG);
+    nixlRegDlist  dram_for_hf3fs(DRAM_SEG);
     nixlXferReqH      *treq;
-    nixl_xfer_dlist_t file_for_hf3fs_list(FILE_SEG);
-    nixl_xfer_dlist_t dram_for_hf3fs_list(DRAM_SEG);
+    nixlXferDlist file_for_hf3fs_list(FILE_SEG);
+    nixlXferDlist dram_for_hf3fs_list(DRAM_SEG);
 
     // Print test configuration information
     print_segment_title("NIXL STORAGE TEST STARTING (HF3FS PLUGIN)");
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
     print_segment_title(phase_title("Creating HF3FS backend"));
 
     // Create HF3FS backend
-    nixl_status_t ret = agent.createBackend("HF3FS", params, hf3fs);
+    nixlStatus ret = agent.createBackend("HF3FS", params, hf3fs);
     if (ret != NIXL_SUCCESS) {
         std::cerr << "Error creating HF3FS backend: " << ret << std::endl;
         return 1;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
     }
 
     // Control variables for performance measurement
-    nixl_status_t status = NIXL_SUCCESS;
+    nixlStatus status = NIXL_SUCCESS;
     nixlTime::us_t time_start;
     nixlTime::us_t time_end;
     nixlTime::us_t time_duration;

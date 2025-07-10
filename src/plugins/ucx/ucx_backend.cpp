@@ -114,7 +114,7 @@ public:
 class nixlUcxCudaCtxGuard {
     nixlUcxCudaDevicePrimaryCtxPtr m_primary;
 public:
-    nixlUcxCudaCtxGuard(nixl_mem_t nixl_mem,
+    nixlUcxCudaCtxGuard(nixlMemType nixl_mem,
                         nixlUcxCudaDevicePrimaryCtxPtr primary) {
         if (nixl_mem == VRAM_SEG && primary && primary->push()) {
             m_primary = primary;
@@ -321,8 +321,8 @@ private:
     // Notification to be sent after completion of all requests
     struct Notif {
 	    std::string agent;
-	    nixl_blob_t payload;
-	    Notif(const std::string& remote_agent, const nixl_blob_t& msg)
+	    nixlBlob payload;
+	    Notif(const std::string& remote_agent, const nixlBlob& msg)
 		    : agent(remote_agent), payload(msg) {}
     };
     std::optional<Notif> notif;
@@ -338,7 +338,7 @@ public:
         head.link(req);
     }
 
-    nixl_status_t release()
+    nixlStatus release()
     {
         nixlUcxIntReq *req = head.next();
 
@@ -364,10 +364,10 @@ public:
     }
 
 
-    nixl_status_t status()
+    nixlStatus status()
     {
         nixlUcxIntReq *req = head.next();
-        nixl_status_t out_ret = NIXL_SUCCESS;
+        nixlStatus out_ret = NIXL_SUCCESS;
 
         if (NULL == req) {
             /* No pending transmissions */
@@ -381,7 +381,7 @@ public:
 
         /* Go over all request updating their status */
         while(req) {
-            nixl_status_t ret;
+            nixlStatus ret;
             if (!req->is_complete()) {
                 ret = ucx_status_to_nixl(ucp_request_check_status((nixlUcxReq)req));
                 switch (ret) {
@@ -449,7 +449,7 @@ void nixlUcxEngine::progressFunc()
             pollFds[wid].revents = 0;
 
             bool made_progress = false;
-            nixl_status_t status;
+            nixlStatus status;
             const auto &uw = uws[wid];
             do {
                 while (uw->progress())
@@ -529,7 +529,7 @@ nixlUcxEngine::nixlUcxEngine (const nixlBackendInitParams* init_params)
 : nixlBackendEngine (init_params) {
     unsigned long numWorkers;
     std::vector<std::string> devs; /* Empty vector */
-    nixl_b_params_t* custom_params = init_params->customParams;
+    nixlBParams* custom_params = init_params->customParams;
 
     if (init_params->enableProgTh) {
         pthrOn = true;
@@ -620,8 +620,8 @@ nixlUcxEngine::nixlUcxEngine (const nixlBackendInitParams* init_params)
     progressThreadStart();
 }
 
-nixl_mem_list_t nixlUcxEngine::getSupportedMems () const {
-    nixl_mem_list_t mems;
+nixlMemList nixlUcxEngine::getSupportedMems () const {
+    nixlMemList mems;
     mems.push_back(DRAM_SEG);
     mems.push_back(VRAM_SEG);
     return mems;
@@ -649,11 +649,11 @@ nixlUcxEngine::~nixlUcxEngine () {
  * Connection management
 *****************************************/
 
-nixl_status_t nixlUcxEngine::checkConn(const std::string &remote_agent) {
+nixlStatus nixlUcxEngine::checkConn(const std::string &remote_agent) {
     return remoteConnMap.count(remote_agent) ? NIXL_SUCCESS : NIXL_ERR_NOT_FOUND;
 }
 
-nixl_status_t nixlUcxEngine::endConn(const std::string &remote_agent) {
+nixlStatus nixlUcxEngine::endConn(const std::string &remote_agent) {
 
     auto search = remoteConnMap.find(remote_agent);
 
@@ -667,7 +667,7 @@ nixl_status_t nixlUcxEngine::endConn(const std::string &remote_agent) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::getConnInfo(std::string &str) const {
+nixlStatus nixlUcxEngine::getConnInfo(std::string &str) const {
     str = workerAddr;
     return NIXL_SUCCESS;
 }
@@ -714,7 +714,7 @@ nixlUcxEngine::connectionTermAmCb (void *arg, const void *header,
     return UCS_OK;
 }
 
-nixl_status_t nixlUcxEngine::connect(const std::string &remote_agent) {
+nixlStatus nixlUcxEngine::connect(const std::string &remote_agent) {
     if(remote_agent == localAgent) {
         return loadRemoteConnInfo(remote_agent, workerAddr);
     }
@@ -725,7 +725,7 @@ nixl_status_t nixlUcxEngine::connect(const std::string &remote_agent) {
     }
 
     bool error = false;
-    nixl_status_t ret = NIXL_SUCCESS;
+    nixlStatus ret = NIXL_SUCCESS;
     std::vector<nixlUcxReq> reqs;
     for (size_t i = 0; i < uws.size(); i++) {
         reqs.emplace_back();
@@ -747,7 +747,7 @@ nixl_status_t nixlUcxEngine::connect(const std::string &remote_agent) {
     return error ? NIXL_ERR_BACKEND : NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::disconnect(const std::string &remote_agent) {
+nixlStatus nixlUcxEngine::disconnect(const std::string &remote_agent) {
     if (remote_agent != localAgent) {
         auto search = remoteConnMap.find(remote_agent);
 
@@ -755,7 +755,7 @@ nixl_status_t nixlUcxEngine::disconnect(const std::string &remote_agent) {
             return NIXL_ERR_NOT_FOUND;
         }
 
-        nixl_status_t ret = NIXL_SUCCESS;
+        nixlStatus ret = NIXL_SUCCESS;
         for (size_t i = 0; i < uws.size(); i++) {
             if (search->second->getEp(i)->checkTxState() == NIXL_SUCCESS) {
                 nixlUcxReq req;
@@ -774,7 +774,7 @@ nixl_status_t nixlUcxEngine::disconnect(const std::string &remote_agent) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::loadRemoteConnInfo (const std::string &remote_agent,
+nixlStatus nixlUcxEngine::loadRemoteConnInfo (const std::string &remote_agent,
                                                  const std::string &remote_conn_info)
 {
     size_t size = remote_conn_info.size();
@@ -809,8 +809,8 @@ nixl_status_t nixlUcxEngine::loadRemoteConnInfo (const std::string &remote_agent
 /****************************************
  * Memory management
 *****************************************/
-nixl_status_t nixlUcxEngine::registerMem (const nixlBlobDesc &mem,
-                                          const nixl_mem_t &nixl_mem,
+nixlStatus nixlUcxEngine::registerMem (const nixlBlobDesc &mem,
+                                          const nixlMemType &nixl_mem,
                                           nixlBackendMD* &out)
 {
     auto priv = std::make_unique<nixlUcxPrivateMetadata>();
@@ -842,7 +842,7 @@ nixl_status_t nixlUcxEngine::registerMem (const nixlBlobDesc &mem,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::deregisterMem (nixlBackendMD* meta)
+nixlStatus nixlUcxEngine::deregisterMem (nixlBackendMD* meta)
 {
     nixlUcxPrivateMetadata *priv = (nixlUcxPrivateMetadata*) meta;
     uc->memDereg(priv->mem);
@@ -850,7 +850,7 @@ nixl_status_t nixlUcxEngine::deregisterMem (nixlBackendMD* meta)
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::getPublicData (const nixlBackendMD* meta,
+nixlStatus nixlUcxEngine::getPublicData (const nixlBackendMD* meta,
                                             std::string &str) const {
     const nixlUcxPrivateMetadata *priv = (nixlUcxPrivateMetadata*) meta;
     str = priv->get();
@@ -859,8 +859,8 @@ nixl_status_t nixlUcxEngine::getPublicData (const nixlBackendMD* meta,
 
 
 // To be cleaned up
-nixl_status_t
-nixlUcxEngine::internalMDHelper (const nixl_blob_t &blob,
+nixlStatus
+nixlUcxEngine::internalMDHelper (const nixlBlob &blob,
                                  const std::string &agent,
                                  nixlBackendMD* &output) {
     try {
@@ -892,7 +892,7 @@ nixlUcxEngine::internalMDHelper (const nixl_blob_t &blob,
     }
 }
 
-nixl_status_t
+nixlStatus
 nixlUcxEngine::loadLocalMD (nixlBackendMD* input,
                             nixlBackendMD* &output)
 {
@@ -901,8 +901,8 @@ nixlUcxEngine::loadLocalMD (nixlBackendMD* input,
 }
 
 // To be cleaned up
-nixl_status_t nixlUcxEngine::loadRemoteMD (const nixlBlobDesc &input,
-                                           const nixl_mem_t &nixl_mem,
+nixlStatus nixlUcxEngine::loadRemoteMD (const nixlBlobDesc &input,
+                                           const nixlMemType &nixl_mem,
                                            const std::string &remote_agent,
                                            nixlBackendMD* &output)
 {
@@ -911,7 +911,7 @@ nixl_status_t nixlUcxEngine::loadRemoteMD (const nixlBlobDesc &input,
     return internalMDHelper(input.metaInfo, remote_agent, output);
 }
 
-nixl_status_t nixlUcxEngine::unloadMD (nixlBackendMD* input) {
+nixlStatus nixlUcxEngine::unloadMD (nixlBackendMD* input) {
 
     nixlUcxPublicMetadata *md = (nixlUcxPublicMetadata*) input; //typecast?
     delete md;
@@ -923,7 +923,7 @@ nixl_status_t nixlUcxEngine::unloadMD (nixlBackendMD* input) {
  * Data movement
 *****************************************/
 
-static nixl_status_t _retHelper(nixl_status_t ret,  nixlUcxBackendH *hndl, nixlUcxReq &req)
+static nixlStatus _retHelper(nixlStatus ret,  nixlUcxBackendH *hndl, nixlUcxReq &req)
 {
     /* if transfer wasn't immediately completed */
     switch(ret) {
@@ -940,7 +940,7 @@ static nixl_status_t _retHelper(nixl_status_t ret,  nixlUcxBackendH *hndl, nixlU
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlUcxEngine::prepXfer (const nixlXferOp &operation,
                                        const nixl_meta_dlist_t &local,
                                        const nixl_meta_dlist_t &remote,
                                        const std::string &remote_agent,
@@ -954,15 +954,15 @@ nixl_status_t nixlUcxEngine::prepXfer (const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
+nixlStatus nixlUcxEngine::estimateXferCost (const nixlXferOp &operation,
                                                const nixl_meta_dlist_t &local,
                                                const nixl_meta_dlist_t &remote,
                                                const std::string &remote_agent,
                                                nixlBackendReqH* const &handle,
                                                std::chrono::microseconds &duration,
                                                std::chrono::microseconds &err_margin,
-                                               nixl_cost_t &method,
-                                               const nixl_opt_args_t* opt_args) const
+                                               nixlCost &method,
+                                               const nixlAgentOptionalArgs* opt_args) const
 {
     nixlUcxBackendH *intHandle = (nixlUcxBackendH *)handle;
     size_t workerId = intHandle->getWorkerId();
@@ -978,7 +978,7 @@ nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
 
     if (local.descCount() == 0) {
         // Nothing to do, use a default value
-        method = nixl_cost_t::ANALYTICAL_BACKEND;
+        method = nixlCost::ANALYTICAL_BACKEND;
         return NIXL_SUCCESS;
     }
 
@@ -995,8 +995,8 @@ nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
 
         std::chrono::microseconds msg_duration;
         std::chrono::microseconds msg_err_margin;
-        nixl_cost_t msg_method;
-        nixl_status_t ret = rmd->conn->getEp(workerId)->estimateCost(lsize, msg_duration, msg_err_margin, msg_method);
+        nixlCost msg_method;
+        nixlStatus ret = rmd->conn->getEp(workerId)->estimateCost(lsize, msg_duration, msg_err_margin, msg_method);
         if (ret != NIXL_SUCCESS) {
             NIXL_ERROR << "Worker failed to estimate cost for segment " << i << " status: " << ret;
             return ret;
@@ -1010,7 +1010,7 @@ nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::postXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlUcxEngine::postXfer (const nixlXferOp &operation,
                                        const nixl_meta_dlist_t &local,
                                        const nixl_meta_dlist_t &remote,
                                        const std::string &remote_agent,
@@ -1020,7 +1020,7 @@ nixl_status_t nixlUcxEngine::postXfer (const nixl_xfer_op_t &operation,
     size_t lcnt = local.descCount();
     size_t rcnt = remote.descCount();
     size_t i;
-    nixl_status_t ret;
+    nixlStatus ret;
     nixlUcxBackendH *intHandle = (nixlUcxBackendH *)handle;
     nixlUcxPrivateMetadata *lmd;
     nixlUcxPublicMetadata *rmd;
@@ -1087,12 +1087,12 @@ nixl_status_t nixlUcxEngine::postXfer (const nixl_xfer_op_t &operation,
     return ret;
 }
 
-nixl_status_t nixlUcxEngine::checkXfer (nixlBackendReqH* handle) const
+nixlStatus nixlUcxEngine::checkXfer (nixlBackendReqH* handle) const
 {
     nixlUcxBackendH *intHandle = (nixlUcxBackendH *)handle;
     size_t workerId = intHandle->getWorkerId();
 
-    nixl_status_t status = intHandle->status();
+    nixlStatus status = intHandle->status();
     auto& notif = intHandle->notification();
     if (status == NIXL_SUCCESS && notif.has_value()) {
         nixlUcxReq req;
@@ -1108,10 +1108,10 @@ nixl_status_t nixlUcxEngine::checkXfer (nixlBackendReqH* handle) const
     return status;
 }
 
-nixl_status_t nixlUcxEngine::releaseReqH(nixlBackendReqH* handle) const
+nixlStatus nixlUcxEngine::releaseReqH(nixlBackendReqH* handle) const
 {
     nixlUcxBackendH *intHandle = (nixlUcxBackendH *)handle;
-    nixl_status_t status = intHandle->release();
+    nixlStatus status = intHandle->release();
 
     /* TODO: return to a pool instead. */
     delete intHandle;
@@ -1132,13 +1132,13 @@ int nixlUcxEngine::progress() {
 *****************************************/
 
 //agent will provide cached msg
-nixl_status_t nixlUcxEngine::notifSendPriv(const std::string &remote_agent,
+nixlStatus nixlUcxEngine::notifSendPriv(const std::string &remote_agent,
                                            const std::string &msg,
                                            nixlUcxReq &req,
                                            size_t worker_id) const
 {
     nixlSerDes ser_des;
-    nixl_status_t ret;
+    nixlStatus ret;
 
     auto search = remoteConnMap.find(remote_agent);
 
@@ -1203,7 +1203,7 @@ void nixlUcxEngine::notifProgress()
     notifProgressCombineHelper(notifPthrPriv, notifPthr);
 }
 
-nixl_status_t nixlUcxEngine::getNotifs(notif_list_t &notif_list)
+nixlStatus nixlUcxEngine::getNotifs(notif_list_t &notif_list)
 {
     if (notif_list.size()!=0)
         return NIXL_ERR_INVALID_PARAM;
@@ -1216,9 +1216,9 @@ nixl_status_t nixlUcxEngine::getNotifs(notif_list_t &notif_list)
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlUcxEngine::genNotif(const std::string &remote_agent, const std::string &msg) const
+nixlStatus nixlUcxEngine::genNotif(const std::string &remote_agent, const std::string &msg) const
 {
-    nixl_status_t ret;
+    nixlStatus ret;
     nixlUcxReq req;
     size_t wid = getWorkerId();
 

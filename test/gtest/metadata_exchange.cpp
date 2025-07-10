@@ -100,7 +100,7 @@ class MetadataExchangeTestFixture : public testing::Test {
                 buffers.emplace_back(size);
             }
 
-            nixl_reg_dlist_t dlist(DRAM_SEG);
+            nixlRegDlist dlist(DRAM_SEG);
             for (const auto &buffer : buffers) {
                 dlist.addDesc(buffer.getBlobDesc());
             }
@@ -124,7 +124,7 @@ protected:
         for (int i = 0; i < AGENT_COUNT_; i++) {
             int port = port_base + i;
             std::string name = "agent_" + std::to_string(i);
-            nixlAgentConfig cfg(false, true, port, nixl_thread_sync_t::NIXL_THREAD_SYNC_STRICT);
+            nixlAgentConfig cfg(false, true, port, nixlThreadSync::NIXL_THREAD_SYNC_STRICT);
 
             auto agent = std::make_unique<nixlAgent>(name, cfg);
 
@@ -153,13 +153,13 @@ TEST_F(MetadataExchangeTestFixture, GetLocalAndLoadRemote)
 {
     initAgentsDefault();
 
-    nixl_xfer_dlist_t dlist(DRAM_SEG);
+    nixlXferDlist dlist(DRAM_SEG);
     for (const auto &buffer : agents_[1].buffers) {
         dlist.addDesc(buffer.getBasicDesc());
     }
 
     std::string remote_name;
-    nixl_blob_t md;
+    nixlBlob md;
 
     auto &src = agents_[1];
     auto &dst = agents_[0];
@@ -188,7 +188,7 @@ TEST_F(MetadataExchangeTestFixture, LoadRemoteWithErrors)
     src.initDefault();
 
     std::string remote_name;
-    nixl_blob_t md;
+    nixlBlob md;
 
     ASSERT_EQ(src.agent->getLocalMD(md), NIXL_SUCCESS);
 
@@ -214,7 +214,7 @@ TEST_F(MetadataExchangeTestFixture, GetLocalPartialAndLoadRemote)
     auto &dst = agents_[1];
 
     std::string remote_name;
-    nixl_blob_t md;
+    nixlBlob md;
 
     // Step 1: Get and load connection info
 
@@ -227,11 +227,11 @@ TEST_F(MetadataExchangeTestFixture, GetLocalPartialAndLoadRemote)
 
     // Step 2: Get partial metadata for agent 0 buffers except the last one
 
-    nixl_reg_dlist_t valid_descs(DRAM_SEG);
+    nixlRegDlist valid_descs(DRAM_SEG);
     for (size_t i = 0; i < src.buffers.size() - 1; i++) {
         valid_descs.addDesc(src.buffers[i].getBlobDesc());
     }
-    nixl_reg_dlist_t invalid_descs(DRAM_SEG);
+    nixlRegDlist invalid_descs(DRAM_SEG);
     invalid_descs.addDesc(src.buffers.back().getBlobDesc());
 
     ASSERT_EQ(src.agent->getLocalPartialMD(valid_descs, md, nullptr), NIXL_SUCCESS);
@@ -247,7 +247,7 @@ TEST_F(MetadataExchangeTestFixture, GetLocalPartialAndLoadRemote)
 
     // Step 3: Get and load again but with extra params
 
-    nixl_opt_args_t extra_params;
+    nixlAgentOptionalArgs extra_params;
     extra_params.backends.push_back(src.backend_handle);
     extra_params.includeConnInfo = true;
 
@@ -269,11 +269,11 @@ TEST_F(MetadataExchangeTestFixture, GetLocalPartialWithErrors)
     src.initDefault();
 
     std::string remote_name;
-    nixl_blob_t md;
+    nixlBlob md;
 
     // Case 1: Use unregistered descriptors
     MemBuffer unregistered_buffer(1024);
-    nixl_reg_dlist_t unregistered_descs(DRAM_SEG);
+    nixlRegDlist unregistered_descs(DRAM_SEG);
     unregistered_descs.addDesc(unregistered_buffer.getBlobDesc());
 
     ASSERT_NE(src.agent->getLocalPartialMD(unregistered_descs, md, nullptr), NIXL_SUCCESS);
@@ -289,7 +289,7 @@ TEST_F(MetadataExchangeTestFixture, GetLocalPartialWithErrors)
 
     dst.initDefault();
 
-    nixl_reg_dlist_t valid_descs(DRAM_SEG);
+    nixlRegDlist valid_descs(DRAM_SEG);
     for (const auto& buffer : src.buffers) {
         valid_descs.addDesc(buffer.getBlobDesc());
     }
@@ -320,9 +320,9 @@ TEST_F(MetadataExchangeTestFixture, SocketSendLocalAndInvalidateLocal)
     auto &dst = agents_[1];
 
     auto sleep_time = std::chrono::milliseconds(500);
-    nixl_blob_t md;
+    nixlBlob md;
 
-    nixl_opt_args_t send_args;
+    nixlAgentOptionalArgs send_args;
     send_args.ipAddr = dst.ip;
     send_args.port = dst.port;
 
@@ -352,9 +352,9 @@ TEST_F(MetadataExchangeTestFixture, SocketFetchRemoteAndInvalidateLocal)
     auto &dst = agents_[1];
 
     auto sleep_time = std::chrono::milliseconds(500);
-    nixl_blob_t md;
+    nixlBlob md;
 
-    nixl_opt_args_t fetch_args;
+    nixlAgentOptionalArgs fetch_args;
     fetch_args.ipAddr = src.ip;
     fetch_args.port = src.port;
 
@@ -362,7 +362,7 @@ TEST_F(MetadataExchangeTestFixture, SocketFetchRemoteAndInvalidateLocal)
     std::this_thread::sleep_for(sleep_time);
     ASSERT_EQ(dst.agent->checkRemoteMD(src.name, {DRAM_SEG}), NIXL_SUCCESS);
 
-    nixl_opt_args_t invalidate_args;
+    nixlAgentOptionalArgs invalidate_args;
     invalidate_args.ipAddr = dst.ip;
     invalidate_args.port = dst.port;
 
@@ -379,9 +379,9 @@ TEST_F(MetadataExchangeTestFixture, SocketSendPartialLocal)
     auto &dst = agents_[1];
 
     auto sleep_time = std::chrono::milliseconds(500);
-    nixl_blob_t md;
+    nixlBlob md;
 
-    nixl_opt_args_t send_args;
+    nixlAgentOptionalArgs send_args;
     send_args.ipAddr = dst.ip;
     send_args.port = dst.port;
 
@@ -395,11 +395,11 @@ TEST_F(MetadataExchangeTestFixture, SocketSendPartialLocal)
 
     // Step 2: Get partial metadata for agent 0 buffers except the last one
 
-    nixl_reg_dlist_t valid_descs(DRAM_SEG);
+    nixlRegDlist valid_descs(DRAM_SEG);
     for (size_t i = 0; i < src.buffers.size() - 1; i++) {
         valid_descs.addDesc(src.buffers[i].getBlobDesc());
     }
-    nixl_reg_dlist_t invalid_descs(DRAM_SEG);
+    nixlRegDlist invalid_descs(DRAM_SEG);
     invalid_descs.addDesc(src.buffers.back().getBlobDesc());
 
     ASSERT_EQ(src.agent->sendLocalPartialMD(valid_descs, &send_args), NIXL_SUCCESS);
@@ -436,15 +436,15 @@ TEST_F(MetadataExchangeTestFixture, SocketSendLocalPartialWithErrors)
     src.initDefault();
 
     auto sleep_time = std::chrono::milliseconds(500);
-    nixl_blob_t md;
+    nixlBlob md;
 
-    nixl_opt_args_t send_args;
+    nixlAgentOptionalArgs send_args;
     send_args.ipAddr = dst.ip;
     send_args.port = dst.port;
 
     // Case 1: Use unregistered descriptors
     MemBuffer unregistered_buffer(1024);
-    nixl_reg_dlist_t unregistered_descs(DRAM_SEG);
+    nixlRegDlist unregistered_descs(DRAM_SEG);
     unregistered_descs.addDesc(unregistered_buffer.getBlobDesc());
 
     ASSERT_NE(src.agent->sendLocalPartialMD(unregistered_descs, &send_args), NIXL_SUCCESS);
@@ -465,7 +465,7 @@ TEST_F(MetadataExchangeTestFixture, LocalNonLocalMDExchange)
     auto &dst = agents_[1];
 
     nixlBackendH *backend;
-    nixl_status_t status;
+    nixlStatus status;
     std::string backend_name;
     for (const auto& name : std::set<std::string>{"GDS", "POSIX"}) {
         status = src.agent->createBackend(name, {}, backend);

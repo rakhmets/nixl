@@ -33,7 +33,7 @@ void nixlSerDes::_stringToBytes(void* fill_buf, const std::string &s, ssize_t si
 }
 
 // Strings serialization
-nixl_status_t nixlSerDes::addStr(const std::string &tag, const std::string &str){
+nixlStatus nixlSerDes::addStr(const std::string &tag, const std::string &str){
 
     size_t len = str.size();
 
@@ -71,7 +71,7 @@ std::string nixlSerDes::getStr(const std::string &tag){
 }
 
 // Byte buffers serialization
-nixl_status_t nixlSerDes::addBuf(const std::string &tag, const void* buf, ssize_t len){
+nixlStatus nixlSerDes::addBuf(const std::string &tag, const void* buf, ssize_t len){
 
     workingStr.append(tag);
     workingStr.append(_bytesToString(&len, sizeof(ssize_t)));
@@ -96,7 +96,7 @@ ssize_t nixlSerDes::getBufLen(const std::string &tag) const{
     return len;
 }
 
-nixl_status_t nixlSerDes::getBuf(const std::string &tag, void *buf, ssize_t len){
+nixlStatus nixlSerDes::getBuf(const std::string &tag, void *buf, ssize_t len){
     if(workingStr.compare(des_offset, tag.size(), tag) != 0){
        //incorrect tag
        return NIXL_ERR_MISMATCH;
@@ -119,7 +119,7 @@ std::string nixlSerDes::exportStr() const {
     return workingStr;
 }
 
-nixl_status_t nixlSerDes::importStr(const std::string &sdbuf) {
+nixlStatus nixlSerDes::importStr(const std::string &sdbuf) {
 
     if(sdbuf.compare(0, 11, "nixlSerDes|") != 0){
        //incorrect tag

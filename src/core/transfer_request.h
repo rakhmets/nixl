@@ -28,11 +28,11 @@ class nixlXferReqH {
         nixl_meta_dlist_t* targetDescs    = nullptr;
 
         std::string        remoteAgent;
-        nixl_blob_t        notifMsg;
+        nixlBlob        notifMsg;
         bool               hasNotif       = false;
 
-        nixl_xfer_op_t     backendOp;
-        nixl_status_t      status;
+        nixlXferOp     backendOp;
+        nixlStatus      status;
 
     public:
         inline nixlXferReqH() { }

@@ -40,7 +40,7 @@ static void checkCudaError(cudaError_t result, const char *message) {
 #endif
 
 
-static string op2string(nixl_xfer_op_t op, bool hasNotif)
+static string op2string(nixlXferOp op, bool hasNotif)
 {
     if(op == NIXL_READ && !hasNotif)
         return string("READ");
@@ -54,7 +54,7 @@ static string op2string(nixl_xfer_op_t op, bool hasNotif)
     return string("ERR-OP");
 }
 
-std::string memType2Str(nixl_mem_t mem_type)
+std::string memType2Str(nixlMemType mem_type)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -75,7 +75,7 @@ nixlBackendEngine *createEngine(std::string name, uint32_t ndev, bool p_thread)
 {
     nixlBackendEngine     *ucx_mo;
     nixlBackendInitParams init;
-    nixl_b_params_t       custom_params;
+    nixlBParams       custom_params;
 
     custom_params["num_ucx_engines"] = std::to_string(ndev);
     init.enableProgTh = p_thread;
@@ -131,7 +131,7 @@ static int cudaQueryAddr(void *address, bool &is_dev,
 #endif
 
 
-void allocateBuffer(nixl_mem_t mem_type, int dev_id, size_t len, void* &addr)
+void allocateBuffer(nixlMemType mem_type, int dev_id, size_t len, void* &addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -159,7 +159,7 @@ void allocateBuffer(nixl_mem_t mem_type, int dev_id, size_t len, void* &addr)
     assert(addr);
 }
 
-void releaseBuffer(nixl_mem_t mem_type, int dev_id, void* &addr)
+void releaseBuffer(nixlMemType mem_type, int dev_id, void* &addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -177,7 +177,7 @@ void releaseBuffer(nixl_mem_t mem_type, int dev_id, void* &addr)
     }
 }
 
-void doMemset(nixl_mem_t mem_type, int dev_id, void *addr, char byte, size_t len)
+void doMemset(nixlMemType mem_type, int dev_id, void *addr, char byte, size_t len)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -195,7 +195,7 @@ void doMemset(nixl_mem_t mem_type, int dev_id, void *addr, char byte, size_t len
     }
 }
 
-void *getValidationPtr(nixl_mem_t mem_type, void *addr, size_t len)
+void *getValidationPtr(nixlMemType mem_type, void *addr, size_t len)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -214,7 +214,7 @@ void *getValidationPtr(nixl_mem_t mem_type, void *addr, size_t len)
     }
 }
 
-void *releaseValidationPtr(nixl_mem_t mem_type, void *addr)
+void *releaseValidationPtr(nixlMemType mem_type, void *addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -300,7 +300,7 @@ void createRemoteDescs(nixlBackendEngine *src_ucx,
     for(int i = 0; i < src_descs.descCount(); i++) {
         nixlBlobDesc desc_s;
         nixlMetaDesc desc_m;
-        nixl_status_t status;
+        nixlStatus status;
 
         *((nixlBasicDesc*)&desc_s) = (nixlBasicDesc)src_descs[i];
         *((nixlBasicDesc*)&desc_m) = (nixlBasicDesc)src_descs[i];
@@ -321,7 +321,7 @@ void createRemoteDescs(nixlBackendEngine *src_ucx,
 void destroyRemoteDescs(nixlBackendEngine *dst_ucx,
                         nixl_meta_dlist_t &dst_descs)
 {
-    nixl_status_t status;
+    nixlStatus status;
     for(int i = 0; i < dst_descs.descCount(); i++) {
         status = dst_ucx->unloadMD (dst_descs[i].metadataP);
         assert(status == NIXL_SUCCESS);
@@ -335,9 +335,9 @@ void destroyRemoteDescs(nixlBackendEngine *dst_ucx,
 void performTransfer(nixlBackendEngine *ucx1, nixlBackendEngine *ucx2,
                      nixl_meta_dlist_t &req_src_descs,
                      nixl_meta_dlist_t &req_dst_descs,
-                     nixl_xfer_op_t op, bool progress, bool use_notif)
+                     nixlXferOp op, bool progress, bool use_notif)
 {
-    nixl_status_t status;
+    nixlStatus status;
     nixlBackendReqH* handle;
     void *chkptr1, *chkptr2;
 
@@ -419,11 +419,11 @@ void performTransfer(nixlBackendEngine *ucx1, nixlBackendEngine *ucx2,
 }
 
 void test_agent_transfer(bool p_thread,
-                nixlBackendEngine *ucx1, nixl_mem_t src_mem_type, int src_dev_cnt, dev_distr_t src_dist_f,
-                nixlBackendEngine *ucx2, nixl_mem_t dst_mem_type, int dst_dev_cnt, dev_distr_t dst_dist_f)
+                nixlBackendEngine *ucx1, nixlMemType src_mem_type, int src_dev_cnt, dev_distr_t src_dist_f,
+                nixlBackendEngine *ucx2, nixlMemType dst_mem_type, int dst_dev_cnt, dev_distr_t dst_dist_f)
 {
     int iter = 10;
-    nixl_status_t status;
+    nixlStatus status;
     bool is_local = (ucx1 == ucx2);
 
     if (is_local) {
@@ -484,7 +484,7 @@ void test_agent_transfer(bool p_thread,
                       ucx1, ucx1_dst_descs);
 
 
-    nixl_xfer_op_t ops[] = {  NIXL_READ, NIXL_WRITE };
+    nixlXferOp ops[] = {  NIXL_READ, NIXL_WRITE };
     bool use_notifs[] = { true, false };
 
     for (size_t i = 0; i < sizeof(ops)/sizeof(ops[i]); i++) {

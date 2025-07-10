@@ -26,10 +26,10 @@
 class nixlPosixQueue {
     public:
         virtual ~nixlPosixQueue() = default;
-        virtual nixl_status_t
+        virtual nixlStatus
         submit (const nixl_meta_dlist_t &local, const nixl_meta_dlist_t &remote) = 0;
-        virtual nixl_status_t checkCompleted() = 0;
-        virtual nixl_status_t prepIO(int fd, void* buf, size_t len, off_t offset) = 0;
+        virtual nixlStatus checkCompleted() = 0;
+        virtual nixlStatus prepIO(int fd, void* buf, size_t len, off_t offset) = 0;
 
     enum class queue_t {
         AIO,

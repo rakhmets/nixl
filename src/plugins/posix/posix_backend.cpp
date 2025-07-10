@@ -27,7 +27,7 @@
 #include "nixl_types.h"
 
 namespace {
-    bool isValidPrepXferParams(const nixl_xfer_op_t &operation,
+    bool isValidPrepXferParams(const nixlXferOp &operation,
                                const nixl_meta_dlist_t &local,
                                const nixl_meta_dlist_t &remote,
                                const std::string &remote_agent,
@@ -75,7 +75,7 @@ namespace {
         }
     }
 
-    static nixlPosixQueue::queue_t getQueueType(const nixl_b_params_t* custom_params) {
+    static nixlPosixQueue::queue_t getQueueType(const nixlBParams* custom_params) {
         using queue_t = nixlPosixQueue::queue_t;
 
         // Check for explicit backend request
@@ -112,11 +112,11 @@ namespace {
 // POSIX Backend Request Handle Implementation
 // -----------------------------------------------------------------------------
 
-nixlPosixBackendReqH::nixlPosixBackendReqH(const nixl_xfer_op_t &op,
+nixlPosixBackendReqH::nixlPosixBackendReqH(const nixlXferOp &op,
                                            const nixl_meta_dlist_t &loc,
                                            const nixl_meta_dlist_t &rem,
                                            const nixl_opt_b_args_t* args,
-                                           const nixl_b_params_t* params)
+                                           const nixlBParams* params)
     : operation(op)
     , local(loc)
     , remote(rem)
@@ -136,7 +136,7 @@ nixlPosixBackendReqH::nixlPosixBackendReqH(const nixl_xfer_op_t &op,
             NIXL_ERR_INVALID_PARAM);
     }
 
-    nixl_status_t status = initQueues();
+    nixlStatus status = initQueues();
     if (status != NIXL_SUCCESS) {
         throw exception(
             absl::StrFormat("Failed to initialize queues: %s", queue_type_),
@@ -145,7 +145,7 @@ nixlPosixBackendReqH::nixlPosixBackendReqH(const nixl_xfer_op_t &op,
 }
 
 
-nixl_status_t nixlPosixBackendReqH::initQueues() {
+nixlStatus nixlPosixBackendReqH::initQueues() {
     try {
         switch (queue_type_) {
             case nixlPosixQueue::queue_t::AIO:
@@ -168,11 +168,11 @@ nixl_status_t nixlPosixBackendReqH::initQueues() {
     }
 }
 
-nixl_status_t nixlPosixBackendReqH::prepXfer() {
+nixlStatus nixlPosixBackendReqH::prepXfer() {
     for (auto [local_it, remote_it] = std::make_pair(local.begin(), remote.begin());
          local_it != local.end() && remote_it != remote.end();
          ++local_it, ++remote_it) {
-        nixl_status_t status = queue->prepIO(
+        nixlStatus status = queue->prepIO(
             remote_it->devId,
             reinterpret_cast<void*>(local_it->addr),
             remote_it->len,
@@ -188,11 +188,11 @@ nixl_status_t nixlPosixBackendReqH::prepXfer() {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlPosixBackendReqH::checkXfer() {
+nixlStatus nixlPosixBackendReqH::checkXfer() {
     return queue->checkCompleted();
 }
 
-nixl_status_t nixlPosixBackendReqH::postXfer() {
+nixlStatus nixlPosixBackendReqH::postXfer() {
     return queue->submit (local, remote);
 }
 
@@ -212,8 +212,8 @@ nixlPosixEngine::nixlPosixEngine(const nixlBackendInitParams* init_params)
     NIXL_INFO << absl::StrFormat("POSIX backend initialized using %s backend", queue_type_);
 }
 
-nixl_status_t nixlPosixEngine::registerMem(const nixlBlobDesc &mem,
-                                           const nixl_mem_t &nixl_mem,
+nixlStatus nixlPosixEngine::registerMem(const nixlBlobDesc &mem,
+                                           const nixlMemType &nixl_mem,
                                            nixlBackendMD* &out) {
     auto supported_mems = getSupportedMems();
     if (std::find(supported_mems.begin(), supported_mems.end(), nixl_mem) != supported_mems.end())
@@ -222,11 +222,11 @@ nixl_status_t nixlPosixEngine::registerMem(const nixlBlobDesc &mem,
     return NIXL_ERR_NOT_SUPPORTED;
 }
 
-nixl_status_t nixlPosixEngine::deregisterMem(nixlBackendMD *) {
+nixlStatus nixlPosixEngine::deregisterMem(nixlBackendMD *) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlPosixEngine::prepXfer(const nixl_xfer_op_t &operation,
+nixlStatus nixlPosixEngine::prepXfer(const nixlXferOp &operation,
                                         const nixl_meta_dlist_t &local,
                                         const nixl_meta_dlist_t &remote,
                                         const std::string &remote_agent,
@@ -238,7 +238,7 @@ nixl_status_t nixlPosixEngine::prepXfer(const nixl_xfer_op_t &operation,
 
     try {
         // Create a params map with our backend selection
-        nixl_b_params_t params;
+        nixlBParams params;
         switch (queue_type_) {
             case nixlPosixQueue::queue_t::AIO:
                 params["use_aio"] = "true";
@@ -252,7 +252,7 @@ nixl_status_t nixlPosixEngine::prepXfer(const nixl_xfer_op_t &operation,
         }
 
         auto posix_handle = std::make_unique<nixlPosixBackendReqH>(operation, local, remote, opt_args, &params);
-        nixl_status_t status = posix_handle->prepXfer();
+        nixlStatus status = posix_handle->prepXfer();
         if (status != NIXL_SUCCESS) {
             return status;
         }
@@ -268,7 +268,7 @@ nixl_status_t nixlPosixEngine::prepXfer(const nixl_xfer_op_t &operation,
     }
 }
 
-nixl_status_t nixlPosixEngine::postXfer(const nixl_xfer_op_t &operation,
+nixlStatus nixlPosixEngine::postXfer(const nixlXferOp &operation,
                                         const nixl_meta_dlist_t &local,
                                         const nixl_meta_dlist_t &remote,
                                         const std::string &remote_agent,
@@ -276,7 +276,7 @@ nixl_status_t nixlPosixEngine::postXfer(const nixl_xfer_op_t &operation,
                                         const nixl_opt_b_args_t* opt_args) const {
     try {
         auto& posix_handle = castPosixHandle(handle);
-        nixl_status_t status = posix_handle.postXfer();
+        nixlStatus status = posix_handle.postXfer();
         if (status != NIXL_IN_PROG) {
             NIXL_ERROR << "Error in submitting queue";
         }
@@ -288,7 +288,7 @@ nixl_status_t nixlPosixEngine::postXfer(const nixl_xfer_op_t &operation,
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t nixlPosixEngine::checkXfer(nixlBackendReqH* handle) const {
+nixlStatus nixlPosixEngine::checkXfer(nixlBackendReqH* handle) const {
     try {
         auto& posix_handle = castPosixHandle(handle);
         return posix_handle.checkXfer();
@@ -300,7 +300,7 @@ nixl_status_t nixlPosixEngine::checkXfer(nixlBackendReqH* handle) const {
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t nixlPosixEngine::releaseReqH(nixlBackendReqH* handle) const {
+nixlStatus nixlPosixEngine::releaseReqH(nixlBackendReqH* handle) const {
     try {
         auto& posix_handle = castPosixHandle(handle);
         posix_handle.~nixlPosixBackendReqH();

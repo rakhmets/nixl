@@ -17,7 +17,7 @@
 #include "gds_utils.h"
 #include "common/nixl_log.h"
 
-nixl_status_t gdsUtil::registerFileHandle(int fd,
+nixlStatus gdsUtil::registerFileHandle(int fd,
                                           size_t size,
                                           std::string metaInfo,
                                           gdsFileHandle& gds_handle)
@@ -43,7 +43,7 @@ nixl_status_t gdsUtil::registerFileHandle(int fd,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t gdsUtil::registerBufHandle(void *ptr,
+nixlStatus gdsUtil::registerBufHandle(void *ptr,
                                          size_t size,
                                          int flags)
 {
@@ -56,7 +56,7 @@ nixl_status_t gdsUtil::registerBufHandle(void *ptr,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t gdsUtil::openGdsDriver()
+nixlStatus gdsUtil::openGdsDriver()
 {
     CUfileError_t err;
 
@@ -78,7 +78,7 @@ void gdsUtil::deregisterFileHandle(gdsFileHandle& handle)
     cuFileHandleDeregister(handle.cu_fhandle);
 }
 
-nixl_status_t gdsUtil::deregisterBufHandle(void *ptr)
+nixlStatus gdsUtil::deregisterBufHandle(void *ptr)
 {
     CUfileError_t status;
 
@@ -117,7 +117,7 @@ nixlGdsIOBatch::~nixlGdsIOBatch()
     }
 }
 
-nixl_status_t nixlGdsIOBatch::addToBatch(CUfileHandle_t fh, void *buffer,
+nixlStatus nixlGdsIOBatch::addToBatch(CUfileHandle_t fh, void *buffer,
                                          size_t size, size_t file_offset,
                                          size_t ptr_offset,
                                          CUfileOpcode_t type)
@@ -141,7 +141,7 @@ nixl_status_t nixlGdsIOBatch::addToBatch(CUfileHandle_t fh, void *buffer,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlGdsIOBatch::cancelBatch()
+nixlStatus nixlGdsIOBatch::cancelBatch()
 {
     CUfileError_t   err;
 
@@ -153,7 +153,7 @@ nixl_status_t nixlGdsIOBatch::cancelBatch()
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlGdsIOBatch::submitBatch(int flags)
+nixlStatus nixlGdsIOBatch::submitBatch(int flags)
 {
     CUfileError_t   err;
 
@@ -166,7 +166,7 @@ nixl_status_t nixlGdsIOBatch::submitBatch(int flags)
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlGdsIOBatch::checkStatus()
+nixlStatus nixlGdsIOBatch::checkStatus()
 {
     CUfileError_t       errBatch;
     unsigned int        nr = batch_size;

@@ -114,7 +114,7 @@ struct docaXferReqGpu {
     struct doca_gpu_buf_arr *notif_barr_gpu;
     uint64_t *last_rsvd;
     uint64_t *last_posted;
-    nixl_xfer_op_t backendOp; /* Needed only in case of GPU device transfer */
+    nixlXferOp backendOp; /* Needed only in case of GPU device transfer */
     struct doca_gpu_dev_rdma *rdma_gpu_data; /* DOCA RDMA instance GPU handler */
     struct doca_gpu_dev_rdma *rdma_gpu_notif; /* DOCA RDMA instance GPU handler */
 };
@@ -173,7 +173,7 @@ public:
 class nixlDocaPrivateMetadata : public nixlBackendMD {
 private:
     nixlDocaMem mem;
-    nixl_blob_t remoteMmapStr;
+    nixlBlob remoteMmapStr;
 
 public:
     nixlDocaPrivateMetadata() : nixlBackendMD (true) {}

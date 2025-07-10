@@ -31,7 +31,7 @@ nixlDocaEngine::nixlDocaEngine (const nixlBackendInitParams *init_params) :
         nixlBackendEngine (init_params) {
     std::vector<std::string> ndevs, tmp_gdevs; /* Empty vector */
     doca_error_t result;
-    nixl_b_params_t *custom_params = init_params->customParams;
+    nixlBParams *custom_params = init_params->customParams;
 
     result = doca_log_backend_create_standard();
     if (result != DOCA_SUCCESS) throw std::invalid_argument ("Can't initialize doca log");
@@ -253,7 +253,7 @@ nixlDocaEngine::nixlDocaEngine (const nixlBackendInitParams *init_params) :
     progressThreadStart();
 }
 
-nixl_mem_list_t nixlDocaEngine::getSupportedMems() const {
+nixlMemList nixlDocaEngine::getSupportedMems() const {
     return {DRAM_SEG, VRAM_SEG};
 }
 
@@ -325,7 +325,7 @@ nixlDocaEngine::~nixlDocaEngine() {
  * DOCA request management
  *****************************************/
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::nixlDocaInitNotif (const std::string &remote_agent,
                                    struct doca_dev *dev,
                                    struct doca_gpu *gpu) {
@@ -407,7 +407,7 @@ error:
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::nixlDocaDestroyNotif (struct doca_gpu *gpu, struct nixlDocaNotif *notif) {
     delete notif->send_mmap;
     delete notif->send_barr;
@@ -420,7 +420,7 @@ nixlDocaEngine::nixlDocaDestroyNotif (struct doca_gpu *gpu, struct nixlDocaNotif
 
 // For now just connection setup, not used for xfers to be a complete progThread, so supportsProgTh
 // is false
-nixl_status_t
+nixlStatus
 nixlDocaEngine::progressThreadStart() {
     struct sockaddr_in server_addr = {0};
     int enable = 1;
@@ -494,7 +494,7 @@ nixlDocaEngine::getGpuCudaId() {
     return gdevs[0].first;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::addRdmaQp (const std::string &remote_agent) {
     doca_error_t result;
     struct nixlDocaRdmaQp *rdma_qp;
@@ -698,7 +698,7 @@ exit_error:
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::connectClientRdmaQp (int oob_sock_client, const std::string &remote_agent) {
     doca_error_t result;
     void *remote_conn_details_data = nullptr;
@@ -833,7 +833,7 @@ nixlDocaEngine::connectClientRdmaQp (int oob_sock_client, const std::string &rem
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::recvRemoteAgentName (int oob_sock_client, std::string &remote_agent) {
     size_t msg_size;
 
@@ -861,7 +861,7 @@ nixlDocaEngine::recvRemoteAgentName (int oob_sock_client, std::string &remote_ag
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::sendLocalAgentName (int oob_sock_client) {
     size_t agent_size = localAgent.size();
 
@@ -880,7 +880,7 @@ nixlDocaEngine::sendLocalAgentName (int oob_sock_client) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::connectServerRdmaQp (int oob_sock_client, const std::string &remote_agent) {
     doca_error_t result;
     void *remote_conn_details_data = nullptr;
@@ -1020,7 +1020,7 @@ nixlDocaEngine::connectServerRdmaQp (int oob_sock_client, const std::string &rem
  * Connection management
  *****************************************/
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::getConnInfo (std::string &str) const {
     std::stringstream ss;
     ss << (int)ipv4_addr[0] << "." << (int)ipv4_addr[1] << "." << (int)ipv4_addr[2] << "."
@@ -1029,20 +1029,20 @@ nixlDocaEngine::getConnInfo (std::string &str) const {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::connect (const std::string &remote_agent) {
     // Already connected to remote QP at loadRemoteConnInfo time
     // TODO: Connect part should be moved here from loadRemoteConnInfo
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::disconnect (const std::string &remote_agent) {
     // Disconnection should be handled here
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::loadRemoteConnInfo (const std::string &remote_agent,
                                     const std::string &remote_conn_info) {
 
@@ -1090,9 +1090,9 @@ nixlDocaEngine::loadRemoteConnInfo (const std::string &remote_agent,
 /****************************************
  * Memory management
  *****************************************/
-nixl_status_t
+nixlStatus
 nixlDocaEngine::registerMem (const nixlBlobDesc &mem,
-                             const nixl_mem_t &nixl_mem,
+                             const nixlMemType &nixl_mem,
                              nixlBackendMD *&out) {
     nixlDocaPrivateMetadata *priv = new nixlDocaPrivateMetadata;
     doca_error_t result;
@@ -1141,7 +1141,7 @@ error:
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::deregisterMem (nixlBackendMD *meta) {
     nixlDocaPrivateMetadata *priv = (nixlDocaPrivateMetadata *)meta;
 
@@ -1151,16 +1151,16 @@ nixlDocaEngine::deregisterMem (nixlBackendMD *meta) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::getPublicData (const nixlBackendMD *meta, std::string &str) const {
     const nixlDocaPrivateMetadata *priv = (nixlDocaPrivateMetadata *)meta;
     str = priv->remoteMmapStr;
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::loadRemoteMD (const nixlBlobDesc &input,
-                              const nixl_mem_t &nixl_mem,
+                              const nixlMemType &nixl_mem,
                               const std::string &remote_agent,
                               nixlBackendMD *&output) {
     // TODO: connection setup should move to connect
@@ -1212,7 +1212,7 @@ error:
     return NIXL_ERR_BACKEND;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::unloadMD (nixlBackendMD *input) {
     return NIXL_SUCCESS;
 }
@@ -1220,8 +1220,8 @@ nixlDocaEngine::unloadMD (nixlBackendMD *input) {
 /****************************************
  * Data movement
  *****************************************/
-nixl_status_t
-nixlDocaEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus
+nixlDocaEngine::prepXfer (const nixlXferOp &operation,
                           const nixl_meta_dlist_t &local,
                           const nixl_meta_dlist_t &remote,
                           const std::string &remote_agent,
@@ -1339,8 +1339,8 @@ nixlDocaEngine::prepXfer (const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
-nixlDocaEngine::postXfer (const nixl_xfer_op_t &operation,
+nixlStatus
+nixlDocaEngine::postXfer (const nixlXferOp &operation,
                           const nixl_meta_dlist_t &local,
                           const nixl_meta_dlist_t &remote,
                           const std::string &remote_agent,
@@ -1370,7 +1370,7 @@ nixlDocaEngine::postXfer (const nixl_xfer_op_t &operation,
     return NIXL_IN_PROG;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::checkXfer (nixlBackendReqH *handle) const {
     nixlDocaBckndReq *treq = (nixlDocaBckndReq *)handle;
     uint32_t completion_index;
@@ -1390,7 +1390,7 @@ nixlDocaEngine::checkXfer (nixlBackendReqH *handle) const {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::releaseReqH (nixlBackendReqH *handle) const {
     uint32_t tmp = xferRingPos.load() & (DOCA_XFER_REQ_MAX - 1);
     if (((volatile docaXferCompletion *)completion_list_cpu)[tmp].completed > 0)
@@ -1399,7 +1399,7 @@ nixlDocaEngine::releaseReqH (nixlBackendReqH *handle) const {
         return NIXL_IN_PROG;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::getNotifs (notif_list_t &notif_list) {
     uint32_t recv_idx;
     std::string msg_src;
@@ -1457,7 +1457,7 @@ nixlDocaEngine::getNotifs (notif_list_t &notif_list) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlDocaEngine::genNotif (const std::string &remote_agent, const std::string &msg) const {
     struct nixlDocaNotif *notif;
     struct doca_gpu_dev_rdma *rdma_gpu;

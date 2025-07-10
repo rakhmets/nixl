@@ -54,11 +54,11 @@ nixlHf3fsEngine::nixlHf3fsEngine (const nixlBackendInitParams* init_params)
 }
 
 
-nixl_status_t nixlHf3fsEngine::registerMem (const nixlBlobDesc &mem,
-                                            const nixl_mem_t &nixl_mem,
+nixlStatus nixlHf3fsEngine::registerMem (const nixlBlobDesc &mem,
+                                            const nixlMemType &nixl_mem,
                                             nixlBackendMD* &out)
 {
-    nixl_status_t status;
+    nixlStatus status;
     int fd;
     int ret;
     nixlHf3fsMetadata *md = new nixlHf3fsMetadata();
@@ -106,7 +106,7 @@ nixl_status_t nixlHf3fsEngine::registerMem (const nixlBlobDesc &mem,
     return status;
 }
 
-nixl_status_t nixlHf3fsEngine::deregisterMem (nixlBackendMD* meta)
+nixlStatus nixlHf3fsEngine::deregisterMem (nixlBackendMD* meta)
 {
     nixlHf3fsMetadata *md = (nixlHf3fsMetadata *)meta;
     if (md->type == FILE_SEG) {
@@ -144,7 +144,7 @@ void nixlHf3fsEngine::cleanupIOThread(nixlHf3fsBackendReqH *handle) const
     }
 }
 
-nixl_status_t nixlHf3fsEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlHf3fsEngine::prepXfer (const nixlXferOp &operation,
                                          const nixl_meta_dlist_t &local,
                                          const nixl_meta_dlist_t &remote,
                                          const std::string &remote_agent,
@@ -157,7 +157,7 @@ nixl_status_t nixlHf3fsEngine::prepXfer (const nixl_xfer_op_t &operation,
     size_t              offset = 0;
     int                 buf_cnt  = local.descCount();
     int                 file_cnt = remote.descCount();
-    nixl_status_t       nixl_err = NIXL_ERR_UNKNOWN;
+    nixlStatus       nixl_err = NIXL_ERR_UNKNOWN;
     const char          *nixl_mesg = nullptr;
 
     // Determine which lists contain file/memory descriptors
@@ -243,7 +243,7 @@ cleanup_handle:
     HF3FS_LOG_RETURN(nixl_err, nixl_mesg);
 }
 
-nixl_status_t nixlHf3fsEngine::postXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlHf3fsEngine::postXfer (const nixlXferOp &operation,
                                          const nixl_meta_dlist_t &local,
                                          const nixl_meta_dlist_t &remote,
                                          const std::string &remote_agent,
@@ -251,7 +251,7 @@ nixl_status_t nixlHf3fsEngine::postXfer (const nixl_xfer_op_t &operation,
                                          const nixl_opt_b_args_t* opt_args) const
 {
     nixlHf3fsBackendReqH *hf3fs_handle = (nixlHf3fsBackendReqH *) handle;
-    nixl_status_t        status;
+    nixlStatus        status;
 
     if (hf3fs_handle->io_list.empty()) {
         HF3FS_LOG_RETURN(NIXL_ERR_INVALID_PARAM, "Error: empty io list");
@@ -315,7 +315,7 @@ void nixlHf3fsEngine::waitForIOsThread(void* handle, void *utils)
         }
 
         int num_completed = 0;
-        nixl_status_t status = hf3fs_utils->waitForIOs(&hf3fs_handle->ior, cqes, NUM_CQES, 1, &ts,
+        nixlStatus status = hf3fs_utils->waitForIOs(&hf3fs_handle->ior, cqes, NUM_CQES, 1, &ts,
                                                        &num_completed);
         if (status != NIXL_SUCCESS) {
             io_status->error_status = status;
@@ -351,7 +351,7 @@ void nixlHf3fsEngine::waitForIOsThread(void* handle, void *utils)
     delete[] cqes;
 }
 
-nixl_status_t nixlHf3fsEngine::checkXfer(nixlBackendReqH* handle) const
+nixlStatus nixlHf3fsEngine::checkXfer(nixlBackendReqH* handle) const
 {
     if (handle == nullptr) {
         HF3FS_LOG_RETURN(NIXL_ERR_INVALID_PARAM, "Error: handle is null in checkXfer");
@@ -371,7 +371,7 @@ nixl_status_t nixlHf3fsEngine::checkXfer(nixlBackendReqH* handle) const
     }
 
     if (hf3fs_handle->io_status.error_status != NIXL_SUCCESS) {
-        nixl_status_t error_status = hf3fs_handle->io_status.error_status;
+        nixlStatus error_status = hf3fs_handle->io_status.error_status;
         std::string error_message = hf3fs_handle->io_status.error_message;
         cleanupIOThread(hf3fs_handle);
         HF3FS_LOG_RETURN(error_status, error_message);
@@ -385,7 +385,7 @@ nixl_status_t nixlHf3fsEngine::checkXfer(nixlBackendReqH* handle) const
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlHf3fsEngine::releaseReqH(nixlBackendReqH* handle) const
+nixlStatus nixlHf3fsEngine::releaseReqH(nixlBackendReqH* handle) const
 {
     nixlHf3fsBackendReqH *hf3fs_handle = (nixlHf3fsBackendReqH *) handle;
 

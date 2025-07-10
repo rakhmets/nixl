@@ -38,7 +38,7 @@ nixlGdsEngine::nixlGdsEngine(const nixlBackendInitParams* init_params)
     max_request_size = DEFAULT_MAX_REQUEST_SIZE;
 
     // Read custom parameters if available
-    nixl_b_params_t* custom_params = init_params->customParams;
+    nixlBParams* custom_params = init_params->customParams;
     if (custom_params) {
         // Configure batch_pool_size
         if (custom_params->count("batch_pool_size") > 0) {
@@ -87,11 +87,11 @@ nixlGdsEngine::nixlGdsEngine(const nixlBackendInitParams* init_params)
 
 }
 
-nixl_status_t nixlGdsEngine::registerMem(const nixlBlobDesc &mem,
-                                         const nixl_mem_t &nixl_mem,
+nixlStatus nixlGdsEngine::registerMem(const nixlBlobDesc &mem,
+                                         const nixlMemType &nixl_mem,
                                          nixlBackendMD* &out)
 {
-    nixl_status_t status = NIXL_SUCCESS;
+    nixlStatus status = NIXL_SUCCESS;
     nixlGdsMetadata *md = new nixlGdsMetadata();
     md->type = nixl_mem;
     cudaError_t error_id;
@@ -154,7 +154,7 @@ nixl_status_t nixlGdsEngine::registerMem(const nixlBlobDesc &mem,
     return status;
 }
 
-nixl_status_t nixlGdsEngine::deregisterMem (nixlBackendMD* meta)
+nixlStatus nixlGdsEngine::deregisterMem (nixlBackendMD* meta)
 {
     nixlGdsMetadata *md = (nixlGdsMetadata *)meta;
     if (md->type == FILE_SEG) {
@@ -167,7 +167,7 @@ nixl_status_t nixlGdsEngine::deregisterMem (nixlBackendMD* meta)
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlGdsEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlGdsEngine::prepXfer (const nixlXferOp &operation,
                                        const nixl_meta_dlist_t &local,
                                        const nixl_meta_dlist_t &remote,
                                        const std::string &remote_agent,
@@ -292,7 +292,7 @@ void nixlGdsEngine::returnBatchToPool(nixlGdsIOBatch* batch) const {
         batch_pool.push_back(batch);
 }
 
-nixl_status_t nixlGdsEngine::postXfer(const nixl_xfer_op_t &operation,
+nixlStatus nixlGdsEngine::postXfer(const nixlXferOp &operation,
                                       const nixl_meta_dlist_t &local,
                                       const nixl_meta_dlist_t &remote,
                                       const std::string &remote_agent,
@@ -314,7 +314,7 @@ nixl_status_t nixlGdsEngine::postXfer(const nixl_xfer_op_t &operation,
     while (current_req < request_list.size()) {
         size_t batch_size = std::min(request_list.size() - current_req,
                                      (size_t)batch_limit);
-        nixl_status_t status = createAndSubmitBatch(request_list, current_req,
+        nixlStatus status = createAndSubmitBatch(request_list, current_req,
                                                     batch_size, gds_handle->batch_io_list);
 
         if (status != NIXL_SUCCESS) {
@@ -332,7 +332,7 @@ nixl_status_t nixlGdsEngine::postXfer(const nixl_xfer_op_t &operation,
     return NIXL_IN_PROG;
 }
 
-nixl_status_t nixlGdsEngine::createAndSubmitBatch(const std::vector<GdsTransferRequestH>& requests,
+nixlStatus nixlGdsEngine::createAndSubmitBatch(const std::vector<GdsTransferRequestH>& requests,
                                                   size_t start_idx, size_t batch_size,
                                                   std::vector<nixlGdsIOBatch*>& batch_list) const
 {
@@ -350,7 +350,7 @@ nixl_status_t nixlGdsEngine::createAndSubmitBatch(const std::vector<GdsTransferR
             return NIXL_ERR_INVALID_PARAM;
         }
 
-        nixl_status_t status = batch->addToBatch(req.fh, req.addr, req.size,
+        nixlStatus status = batch->addToBatch(req.fh, req.addr, req.size,
                                                req.file_offset, 0, req.op);
         if (status != NIXL_SUCCESS) {
             returnBatchToPool(batch);
@@ -358,7 +358,7 @@ nixl_status_t nixlGdsEngine::createAndSubmitBatch(const std::vector<GdsTransferR
         }
     }
 
-    nixl_status_t status = batch->submitBatch(0);
+    nixlStatus status = batch->submitBatch(0);
     if (status != NIXL_SUCCESS) {
         returnBatchToPool(batch);
         return NIXL_ERR_BACKEND;
@@ -368,7 +368,7 @@ nixl_status_t nixlGdsEngine::createAndSubmitBatch(const std::vector<GdsTransferR
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlGdsEngine::checkXfer(nixlBackendReqH* handle) const
+nixlStatus nixlGdsEngine::checkXfer(nixlBackendReqH* handle) const
 {
     nixlGdsBackendReqH *gds_handle = (nixlGdsBackendReqH *)handle;
 
@@ -377,7 +377,7 @@ nixl_status_t nixlGdsEngine::checkXfer(nixlBackendReqH* handle) const
         return NIXL_SUCCESS;
     }
 
-    nixl_status_t status = NIXL_SUCCESS;
+    nixlStatus status = NIXL_SUCCESS;
     for (auto* batch : gds_handle->batch_io_list) {
         status = batch->checkStatus();
 
@@ -396,7 +396,7 @@ nixl_status_t nixlGdsEngine::checkXfer(nixlBackendReqH* handle) const
     return status;
 }
 
-nixl_status_t nixlGdsEngine::releaseReqH(nixlBackendReqH* handle) const
+nixlStatus nixlGdsEngine::releaseReqH(nixlBackendReqH* handle) const
 {
 
     nixlGdsBackendReqH *gds_handle = (nixlGdsBackendReqH *) handle;

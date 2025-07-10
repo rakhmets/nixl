@@ -77,8 +77,8 @@ const char* nixlPluginHandle::getVersion() const {
     return "unknown";
 }
 
-std::map<nixl_backend_t, std::string> loadPluginList(const std::string& filename) {
-    std::map<nixl_backend_t, std::string> plugins;
+std::map<nixlBackend, std::string> loadPluginList(const std::string& filename) {
+    std::map<nixlBackend, std::string> plugins;
     std::ifstream file(filename);
 
     if (!file.is_open()) {
@@ -300,7 +300,7 @@ void nixlPluginManager::discoverPluginsFromDir(const std::string& dirpath) {
     }
 }
 
-void nixlPluginManager::unloadPlugin(const nixl_backend_t& plugin_name) {
+void nixlPluginManager::unloadPlugin(const nixlBackend& plugin_name) {
     // Do no unload static plugins
     for (const auto& splugin : getStaticPlugins()) {
         if (splugin.name == plugin_name) {
@@ -313,7 +313,7 @@ void nixlPluginManager::unloadPlugin(const nixl_backend_t& plugin_name) {
     loaded_plugins_.erase(plugin_name);
 }
 
-std::shared_ptr<const nixlPluginHandle> nixlPluginManager::getPlugin(const nixl_backend_t& plugin_name) {
+std::shared_ptr<const nixlPluginHandle> nixlPluginManager::getPlugin(const nixlBackend& plugin_name) {
     lock_guard lg(lock);
 
     auto it = loaded_plugins_.find(plugin_name);
@@ -323,26 +323,26 @@ std::shared_ptr<const nixlPluginHandle> nixlPluginManager::getPlugin(const nixl_
     return nullptr;
 }
 
-nixl_b_params_t nixlPluginHandle::getBackendOptions() const {
-    nixl_b_params_t params;
+nixlBParams nixlPluginHandle::getBackendOptions() const {
+    nixlBParams params;
     if (plugin_ && plugin_->get_backend_options) {
         return plugin_->get_backend_options();
     }
     return params; // Return empty params if not implemented
 }
 
-nixl_mem_list_t nixlPluginHandle::getBackendMems() const {
-    nixl_mem_list_t mems;
+nixlMemList nixlPluginHandle::getBackendMems() const {
+    nixlMemList mems;
     if (plugin_ && plugin_->get_backend_mems) {
         return plugin_->get_backend_mems();
     }
     return mems; // Return empty mems if not implemented
 }
 
-std::vector<nixl_backend_t> nixlPluginManager::getLoadedPluginNames() {
+std::vector<nixlBackend> nixlPluginManager::getLoadedPluginNames() {
     lock_guard lg(lock);
 
-    std::vector<nixl_backend_t> names;
+    std::vector<nixlBackend> names;
     for (const auto& pair : loaded_plugins_) {
         names.push_back(pair.first);
     }

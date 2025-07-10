@@ -36,7 +36,7 @@
 namespace {
 
 Aws::Client::ClientConfiguration
-createClientConfiguration(nixl_b_params_t *custom_params) {
+createClientConfiguration(nixlBParams *custom_params) {
     Aws::Client::ClientConfiguration config;
 
     if (!custom_params) return config;
@@ -62,7 +62,7 @@ createClientConfiguration(nixl_b_params_t *custom_params) {
 }
 
 std::optional<Aws::Auth::AWSCredentials>
-createAWSCredentials(nixl_b_params_t *custom_params) {
+createAWSCredentials(nixlBParams *custom_params) {
     if (!custom_params) return std::nullopt;
 
     std::string access_key, secret_key, session_token;
@@ -84,7 +84,7 @@ createAWSCredentials(nixl_b_params_t *custom_params) {
 }
 
 bool
-getUseVirtualAddressing(nixl_b_params_t *custom_params) {
+getUseVirtualAddressing(nixlBParams *custom_params) {
     if (!custom_params) return false;
 
     auto virtual_addressing_it = custom_params->find("use_virtual_addressing");
@@ -103,7 +103,7 @@ getUseVirtualAddressing(nixl_b_params_t *custom_params) {
 }
 
 std::string
-getBucketName(nixl_b_params_t *custom_params) {
+getBucketName(nixlBParams *custom_params) {
     if (custom_params) {
         auto bucket_it = custom_params->find("bucket");
         if (bucket_it != custom_params->end() && !bucket_it->second.empty()) {
@@ -119,7 +119,7 @@ getBucketName(nixl_b_params_t *custom_params) {
 
 } // namespace
 
-AwsS3Client::AwsS3Client(nixl_b_params_t *custom_params,
+AwsS3Client::AwsS3Client(nixlBParams *custom_params,
                          std::shared_ptr<Aws::Utils::Threading::Executor> executor)
     : awsOptions_(
           []() {

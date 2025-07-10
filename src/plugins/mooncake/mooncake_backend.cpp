@@ -67,8 +67,8 @@ nixlMooncakeEngine::nixlMooncakeEngine (const nixlBackendInitParams* init_params
                                    "", 0, true);
 }
 
-nixl_mem_list_t nixlMooncakeEngine::getSupportedMems () const {
-    nixl_mem_list_t mems;
+nixlMemList nixlMooncakeEngine::getSupportedMems () const {
+    nixlMemList mems;
     mems.push_back(DRAM_SEG);
     mems.push_back(VRAM_SEG);
     return mems;
@@ -88,17 +88,17 @@ nixlMooncakeEngine::~nixlMooncakeEngine () {
 // (segment name in the context of Mooncake Transfer Engine).
 // loadRemoteConnInfo() opens the segment, which implicitly retrieves metadata
 // (such as QP numbers) of the remote agent.
-nixl_status_t nixlMooncakeEngine::connect(const std::string &remote_agent) {
+nixlStatus nixlMooncakeEngine::connect(const std::string &remote_agent) {
     return NIXL_SUCCESS;
 }
 
 // TODO We purposely set this function as empty.
 // Will be changed to follow NIXL's paradigm after refactoring Mooncake Transfer Engine.
-nixl_status_t nixlMooncakeEngine::disconnect(const std::string &remote_agent) {
+nixlStatus nixlMooncakeEngine::disconnect(const std::string &remote_agent) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlMooncakeEngine::getConnInfo(std::string &str) const {
+nixlStatus nixlMooncakeEngine::getConnInfo(std::string &str) const {
     const static size_t kBufLen = 64;
     char buf_out[kBufLen];
     getLocalIpAndPort(engine_, buf_out, kBufLen);
@@ -106,7 +106,7 @@ nixl_status_t nixlMooncakeEngine::getConnInfo(std::string &str) const {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlMooncakeEngine::loadRemoteConnInfo (const std::string &remote_agent,
+nixlStatus nixlMooncakeEngine::loadRemoteConnInfo (const std::string &remote_agent,
                                                       const std::string &remote_conn_info)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -124,8 +124,8 @@ struct nixlMooncakeBackendMD : public nixlBackendMD {
     int ref_cnt;
 };
 
-nixl_status_t nixlMooncakeEngine::registerMem (const nixlBlobDesc &mem,
-                                               const nixl_mem_t &nixl_mem,
+nixlStatus nixlMooncakeEngine::registerMem (const nixlBlobDesc &mem,
+                                               const nixlMemType &nixl_mem,
                                                nixlBackendMD* &out)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -146,7 +146,7 @@ nixl_status_t nixlMooncakeEngine::registerMem (const nixlBlobDesc &mem,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlMooncakeEngine::deregisterMem (nixlBackendMD* meta)
+nixlStatus nixlMooncakeEngine::deregisterMem (nixlBackendMD* meta)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto priv = (nixlMooncakeBackendMD *) meta;
@@ -164,7 +164,7 @@ nixl_status_t nixlMooncakeEngine::deregisterMem (nixlBackendMD* meta)
 // Mooncake Transfer Engine exchanges metadata by itself without any explicit interface,
 // which is different from NIXL's paradigm.
 // Therefore no metadata needs to be exposed to the outside.
-nixl_status_t nixlMooncakeEngine::getPublicData (const nixlBackendMD* meta,
+nixlStatus nixlMooncakeEngine::getPublicData (const nixlBackendMD* meta,
                                                  std::string &str) const
 {
     return NIXL_SUCCESS;
@@ -172,7 +172,7 @@ nixl_status_t nixlMooncakeEngine::getPublicData (const nixlBackendMD* meta,
 
 // TODO We purposely set this function as empty.
 // Will be changed to follow NIXL's paradigm after refactoring Mooncake Transfer Engine.
-nixl_status_t
+nixlStatus
 nixlMooncakeEngine::loadLocalMD (nixlBackendMD* input,
                                  nixlBackendMD* &output)
 {
@@ -182,8 +182,8 @@ nixlMooncakeEngine::loadLocalMD (nixlBackendMD* input,
 
 // TODO We purposely set this function as empty.
 // Will be changed to follow NIXL's paradigm after refactoring Mooncake Transfer Engine.
-nixl_status_t nixlMooncakeEngine::loadRemoteMD (const nixlBlobDesc &input,
-                                                const nixl_mem_t &nixl_mem,
+nixlStatus nixlMooncakeEngine::loadRemoteMD (const nixlBlobDesc &input,
+                                                const nixlMemType &nixl_mem,
                                                 const std::string &remote_agent,
                                                 nixlBackendMD* &output)
 {
@@ -193,7 +193,7 @@ nixl_status_t nixlMooncakeEngine::loadRemoteMD (const nixlBlobDesc &input,
 
 // TODO We purposely set this function as empty.
 // Will be changed to follow NIXL's paradigm after refactoring Mooncake Transfer Engine.
-nixl_status_t nixlMooncakeEngine::unloadMD (nixlBackendMD* input)
+nixlStatus nixlMooncakeEngine::unloadMD (nixlBackendMD* input)
 {
     return NIXL_SUCCESS;
 }
@@ -205,8 +205,8 @@ struct nixlMooncakeBackendReqH : public nixlBackendReqH {
     size_t request_count;
 };
 
-nixl_status_t
-nixlMooncakeEngine::prepXfer (const nixl_xfer_op_t &operation,
+nixlStatus
+nixlMooncakeEngine::prepXfer (const nixlXferOp &operation,
                               const nixl_meta_dlist_t &local,
                               const nixl_meta_dlist_t &remote,
                               const std::string &remote_agent,
@@ -218,7 +218,7 @@ nixlMooncakeEngine::prepXfer (const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t nixlMooncakeEngine::postXfer (const nixl_xfer_op_t &operation,
+nixlStatus nixlMooncakeEngine::postXfer (const nixlXferOp &operation,
                                             const nixl_meta_dlist_t &local,
                                             const nixl_meta_dlist_t &remote,
                                             const std::string &remote_agent,
@@ -268,7 +268,7 @@ nixl_status_t nixlMooncakeEngine::postXfer (const nixl_xfer_op_t &operation,
     return NIXL_IN_PROG;
 }
 
-nixl_status_t nixlMooncakeEngine::checkXfer (nixlBackendReqH* handle) const
+nixlStatus nixlMooncakeEngine::checkXfer (nixlBackendReqH* handle) const
 {
     auto priv = (nixlMooncakeBackendReqH *) handle;
     bool has_failed = false;
@@ -290,7 +290,7 @@ nixl_status_t nixlMooncakeEngine::checkXfer (nixlBackendReqH* handle) const
     return has_failed ? NIXL_ERR_BACKEND : NIXL_SUCCESS;
 }
 
-nixl_status_t nixlMooncakeEngine::releaseReqH(nixlBackendReqH* handle) const
+nixlStatus nixlMooncakeEngine::releaseReqH(nixlBackendReqH* handle) const
 {
     auto priv = (nixlMooncakeBackendReqH *) handle;
     if (priv->batch_id != INVALID_BATCH) {

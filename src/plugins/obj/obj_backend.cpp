@@ -28,14 +28,14 @@
 namespace {
 
 std::size_t
-getNumThreads(nixl_b_params_t *custom_params) {
+getNumThreads(nixlBParams *custom_params) {
     return custom_params && custom_params->count("num_threads") > 0 ?
         std::stoul(custom_params->at("num_threads")) :
         std::max(1u, std::thread::hardware_concurrency() / 2);
 }
 
 bool
-isValidPrepXferParams(const nixl_xfer_op_t &operation,
+isValidPrepXferParams(const nixlXferOp &operation,
                       const nixl_meta_dlist_t &local,
                       const nixl_meta_dlist_t &remote,
                       const std::string &remote_agent,
@@ -71,9 +71,9 @@ public:
     nixlObjBackendReqH() = default;
     ~nixlObjBackendReqH() = default;
 
-    std::vector<std::future<nixl_status_t>> statusFutures_;
+    std::vector<std::future<nixlStatus>> statusFutures_;
 
-    nixl_status_t
+    nixlStatus
     getOverallStatus() {
         while (!statusFutures_.empty()) {
             if (statusFutures_.back().wait_for(std::chrono::seconds(0)) ==
@@ -94,14 +94,14 @@ public:
 
 class nixlObjMetadata : public nixlBackendMD {
 public:
-    nixlObjMetadata(nixl_mem_t nixl_mem, uint64_t dev_id, std::string obj_key)
+    nixlObjMetadata(nixlMemType nixl_mem, uint64_t dev_id, std::string obj_key)
         : nixlBackendMD(true),
           nixlMem(nixl_mem),
           devId(dev_id),
           objKey(obj_key) {}
     ~nixlObjMetadata() = default;
 
-    nixl_mem_t nixlMem;
+    nixlMemType nixlMem;
     uint64_t devId;
     std::string objKey;
 };
@@ -133,9 +133,9 @@ nixlObjEngine::~nixlObjEngine() {
     executor_->WaitUntilStopped();
 }
 
-nixl_status_t
+nixlStatus
 nixlObjEngine::registerMem(const nixlBlobDesc &mem,
-                           const nixl_mem_t &nixl_mem,
+                           const nixlMemType &nixl_mem,
                            nixlBackendMD *&out) {
     auto supported_mems = getSupportedMems();
     if (std::find(supported_mems.begin(), supported_mems.end(), nixl_mem) == supported_mems.end())
@@ -151,7 +151,7 @@ nixlObjEngine::registerMem(const nixlBlobDesc &mem,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
+nixlStatus
 nixlObjEngine::deregisterMem(nixlBackendMD *meta) {
     nixlObjMetadata *obj_md = static_cast<nixlObjMetadata *>(meta);
     if (obj_md) {
@@ -162,8 +162,8 @@ nixlObjEngine::deregisterMem(nixlBackendMD *meta) {
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
-nixlObjEngine::prepXfer(const nixl_xfer_op_t &operation,
+nixlStatus
+nixlObjEngine::prepXfer(const nixlXferOp &operation,
                         const nixl_meta_dlist_t &local,
                         const nixl_meta_dlist_t &remote,
                         const std::string &remote_agent,
@@ -177,8 +177,8 @@ nixlObjEngine::prepXfer(const nixl_xfer_op_t &operation,
     return NIXL_SUCCESS;
 }
 
-nixl_status_t
-nixlObjEngine::postXfer(const nixl_xfer_op_t &operation,
+nixlStatus
+nixlObjEngine::postXfer(const nixlXferOp &operation,
                         const nixl_meta_dlist_t &local,
                         const nixl_meta_dlist_t &remote,
                         const std::string &remote_agent,
@@ -197,7 +197,7 @@ nixlObjEngine::postXfer(const nixl_xfer_op_t &operation,
             return NIXL_ERR_INVALID_PARAM;
         }
 
-        auto status_promise = std::make_shared<std::promise<nixl_status_t>>();
+        auto status_promise = std::make_shared<std::promise<nixlStatus>>();
         req_h->statusFutures_.push_back(status_promise->get_future());
 
         uintptr_t data_ptr = local_desc.addr;
@@ -221,13 +221,13 @@ nixlObjEngine::postXfer(const nixl_xfer_op_t &operation,
     return NIXL_IN_PROG;
 }
 
-nixl_status_t
+nixlStatus
 nixlObjEngine::checkXfer(nixlBackendReqH *handle) const {
     nixlObjBackendReqH *req_h = static_cast<nixlObjBackendReqH *>(handle);
     return req_h->getOverallStatus();
 }
 
-nixl_status_t
+nixlStatus
 nixlObjEngine::releaseReqH(nixlBackendReqH *handle) const {
     nixlObjBackendReqH *req_h = static_cast<nixlObjBackendReqH *>(handle);
     delete req_h;

@@ -60,10 +60,10 @@ class nixlAgent {
          * @brief  Discover the available supported plugins found in the plugin paths
          *
          * @param  plugins [out] Vector of available backend plugins
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        getAvailPlugins (std::vector<nixl_backend_t> &plugins);
+        nixlStatus
+        getAvailPlugins (std::vector<nixlBackend> &plugins);
 
         /**
          * @brief  Get the supported memory types, and init config parameters and their
@@ -72,12 +72,12 @@ class nixlAgent {
          * @param  type          Plugin backend type
          * @param  mems [out]    List of supported memory types for nixl by the plugin
          * @param  params [out]  List of init parameters and their values for the plugin
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        getPluginParams (const nixl_backend_t &type,
-                         nixl_mem_list_t &mems,
-                         nixl_b_params_t &params) const;
+        nixlStatus
+        getPluginParams (const nixlBackend &type,
+                         nixlMemList &mems,
+                         nixlBParams &params) const;
         /**
          * @brief  Get the backend parameters after instantiation. This will be a comprehensive
          *         list, for instance the default values used for parameters that were not
@@ -86,12 +86,12 @@ class nixlAgent {
          * @param  backend       Backend type
          * @param  mems [out]    List of supported memory types for nixl by the backend
          * @param  params [out]  List of init parameters and their values for the backend
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         getBackendParams (const nixlBackendH* backend,
-                          nixl_mem_list_t &mems,
-                          nixl_b_params_t &params) const;
+                          nixlMemList &mems,
+                          nixlBParams &params) const;
 
         /**
          * @brief  Instantiate a backend engine object based on the corresponding parameters
@@ -99,11 +99,11 @@ class nixlAgent {
          * @param  type          Backend type
          * @param  params        Backend specific parameters
          * @param  backend [out] Backend handle for NIXL
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        createBackend (const nixl_backend_t &type,
-                       const nixl_b_params_t &params,
+        nixlStatus
+        createBackend (const nixlBackend &type,
+                       const nixlBParams &params,
                        nixlBackendH* &backend);
         /**
          * @brief  Register a memory/storage with NIXL. If a list of backends hints is provided
@@ -111,11 +111,11 @@ class nixlAgent {
          *
          * @param  descs         Descriptor list of the buffers to be registered
          * @param  extra_params  Optional additional parameters used in registering memory
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        registerMem (const nixl_reg_dlist_t &descs,
-                     const nixl_opt_args_t* extra_params = nullptr);
+        nixlStatus
+        registerMem (const nixlRegDlist &descs,
+                     const nixlAgentOptionalArgs* extra_params = nullptr);
 
         /**
          * @brief  Deregister a memory/storage from NIXL. If a list of backends hints is provided
@@ -124,11 +124,11 @@ class nixlAgent {
          *
          * @param  descs         Descriptor list of the buffers to be deregistered
          * @param  extra_params  Optional additional parameters used in deregistering memory
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        deregisterMem (const nixl_reg_dlist_t &descs,
-                       const nixl_opt_args_t* extra_params = nullptr);
+        nixlStatus
+        deregisterMem (const nixlRegDlist &descs,
+                       const nixlAgentOptionalArgs* extra_params = nullptr);
 
         /**
          * @brief  Make connection proactively, instead of at the time of the first transfer
@@ -136,11 +136,11 @@ class nixlAgent {
          *         (via extra_params), the connection is made for the specified backends.
          *
          * @param  remote_agent  Name of the remote agent
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         makeConnection (const std::string &remote_agent,
-                        const nixl_opt_args_t* extra_params = nullptr);
+                        const nixlAgentOptionalArgs* extra_params = nullptr);
 
         /*** Transfer Request Preparation ***/
         /**
@@ -162,13 +162,13 @@ class nixlAgent {
          * @param  descs            The descriptor list to be prepared for transfer requests
          * @param  dlist_hndl [out] The prepared descriptor list handle for this transfer request
          * @param  extra_params     Optional additional parameters used in preparing dlist handle
-         * @return nixl_status_t    Error code if call was not successful
+         * @return nixlStatus    Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         prepXferDlist (const std::string &agent_name,
-                       const nixl_xfer_dlist_t &descs,
+                       const nixlXferDlist &descs,
                        nixlDlistH* &dlist_hndl,
-                       const nixl_opt_args_t* extra_params = nullptr) const;
+                       const nixlAgentOptionalArgs* extra_params = nullptr) const;
         /**
          * @brief  Make a transfer request `req_handl` by selecting indices from already
          *         prepared descriptor list handles. NIXL automatically determines the backend
@@ -183,16 +183,16 @@ class nixlAgent {
          * @param  remote_indices   Indices list to the remote prepared descriptor list handle
          * @param  req_handle [out] Transfer request handle output
          * @param  extra_params     Optional additional parameters used in making a transfer request
-         * @return nixl_status_t    Error code if call was not successful
+         * @return nixlStatus    Error code if call was not successful
          */
-        nixl_status_t
-        makeXferReq (const nixl_xfer_op_t &operation,
+        nixlStatus
+        makeXferReq (const nixlXferOp &operation,
                      const nixlDlistH* local_side,
                      const std::vector<int> &local_indices,
                      const nixlDlistH* remote_side,
                      const std::vector<int> &remote_indices,
                      nixlXferReqH* &req_hndl,
-                     const nixl_opt_args_t* extra_params = nullptr) const;
+                     const nixlAgentOptionalArgs* extra_params = nullptr) const;
         /**
          * @brief  A combined API, to create a transfer request from two descriptor lists.
          *         NIXL will prepare each side and create a transfer handle `req_hndl`.
@@ -220,15 +220,15 @@ class nixlAgent {
          * @param  remote_agent   Remote (or self) agent name for accessing the remote (local) data
          * @param  req_hndl [out] Transfer request handle output
          * @param  extra_params   Optional extra parameters used in creating a transfer request
-         * @return nixl_status_t  Error code if call was not successful
+         * @return nixlStatus  Error code if call was not successful
          */
-        nixl_status_t
-        createXferReq (const nixl_xfer_op_t &operation,
-                       const nixl_xfer_dlist_t &local_descs,
-                       const nixl_xfer_dlist_t &remote_descs,
+        nixlStatus
+        createXferReq (const nixlXferOp &operation,
+                       const nixlXferDlist &local_descs,
+                       const nixlXferDlist &remote_descs,
                        const std::string &remote_agent,
                        nixlXferReqH* &req_hndl,
-                       const nixl_opt_args_t* extra_params = nullptr) const;
+                       const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /*** Operations on prepared Transfer Request ***/
 
@@ -240,14 +240,14 @@ class nixlAgent {
          * @param err_margin   [out] Estimated error margin of the transfer
          * @param method       [out] Method to compute the cost estimate
          * @param extra_params Optional extra parameters
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         estimateXferCost(const nixlXferReqH* req_hndl,
                          std::chrono::microseconds &duration,
                          std::chrono::microseconds &err_margin,
-                         nixl_cost_t &method,
-                         const nixl_opt_args_t* extra_params = nullptr) const;
+                         nixlCost &method,
+                         const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Submit a transfer request `req_hndl` which initiates a transfer.
@@ -259,19 +259,19 @@ class nixlAgent {
          *
          * @param  req_hndl      Transfer request handle obtained from makeXferReq/createXferReq
          * @param  extra_params  Optional extra parameters used in posting a transfer request
-         * @return nixl_status_t NIXL_IN_PROG or error code if call was not successful
+         * @return nixlStatus NIXL_IN_PROG or error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         postXferReq (nixlXferReqH* req_hndl,
-                     const nixl_opt_args_t* extra_params = nullptr) const;
+                     const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Check the status of transfer request `req_hndl`
          *
          * @param  req_hndl      Transfer request handle after postXferReq
-         * @return nixl_status_t NIXL_IN_PROG or error code if call was not successful
+         * @return nixlStatus NIXL_IN_PROG or error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         getXferStatus (nixlXferReqH* req_hndl) const;
 
         /**
@@ -280,9 +280,9 @@ class nixlAgent {
          *
          * @param  req_hndl      Transfer request handle obtained from makeXferReq/createXferReq
          * @param  backend [out] Output backend handle chosen for the transfer request
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         queryXferBackend (const nixlXferReqH* req_hndl,
                           nixlBackendH* &backend) const;
 
@@ -291,18 +291,18 @@ class nixlAgent {
          *         it will be canceled, or return an error if the transfer cannot be aborted.
          *
          * @param  req_hndl      Transfer request handle to be released
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         releaseXferReq (nixlXferReqH* req_hndl) const;
 
         /**
          * @brief  Release the prepared descriptor list handle `dlist_hndl`
          *
          * @param  dlist_hndl    Prepared descriptor list handle to be released
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         releasedDlistH (nixlDlistH* dlist_hndl) const;
 
 
@@ -316,11 +316,11 @@ class nixlAgent {
          *
          * @param  notif_map     Input notifications list
          * @param  extra_params  Optional extra parameters used in getting notifications
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        getNotifs (nixl_notifs_t &notif_map,
-                   const nixl_opt_args_t* extra_params = nullptr);
+        nixlStatus
+        getNotifs (nixlNotifs &notif_map,
+                   const nixlAgentOptionalArgs* extra_params = nullptr);
 
         /**
          * @brief  Generate a notification, not bound to a transfer, e.g., for control.
@@ -332,22 +332,22 @@ class nixlAgent {
          * @param  remote_agent  Remote agent name as string
          * @param  msg           Notification message to be sent
          * @param  extra_params  Optional extra parameters used in generating a standalone notif
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         genNotif (const std::string &remote_agent,
-                  const nixl_blob_t &msg,
-                  const nixl_opt_args_t* extra_params = nullptr) const;
+                  const nixlBlob &msg,
+                  const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /*** Metadata handling through side channel ***/
         /**
          * @brief  Get metadata blob for this agent, to be given to other agents.
          *
          * @param  str [out]     The serialized metadata blob
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        getLocalMD (nixl_blob_t &str) const;
+        nixlStatus
+        getLocalMD (nixlBlob &str) const;
 
         /**
          * @brief  Get partial metadata blob for this agent, to be given to other agents.
@@ -362,12 +362,12 @@ class nixlAgent {
          * @param  descs         [in]  Descriptor list to include in the metadata
          * @param  str           [out] The serialized metadata blob
          * @param  extra_params  [in]  Optional extra parameters used in getting partial metadata
-         * @return nixl_status_t       Error code if call was not successful
+         * @return nixlStatus       Error code if call was not successful
          */
-        nixl_status_t
-        getLocalPartialMD(const nixl_reg_dlist_t &descs,
-                          nixl_blob_t &str,
-                          const nixl_opt_args_t* extra_params = nullptr) const;
+        nixlStatus
+        getLocalPartialMD(const nixlRegDlist &descs,
+                          nixlBlob &str,
+                          const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Load other agent's metadata and unpack it internally. Now the local
@@ -375,10 +375,10 @@ class nixlAgent {
          *
          * @param  remote_metadata  Serialized metadata blob to be loaded
          * @param  agent_name [out] Agent name extracted from the loaded metadata blob
-         * @return nixl_status_t    Error code if call was not successful
+         * @return nixlStatus    Error code if call was not successful
          */
-        nixl_status_t
-        loadRemoteMD (const nixl_blob_t &remote_metadata,
+        nixlStatus
+        loadRemoteMD (const nixlBlob &remote_metadata,
                       std::string &agent_name);
 
         /**
@@ -387,9 +387,9 @@ class nixlAgent {
          *         transfers can be initiated towards that agent.
          *
          * @param  remote_agent  Remote agent name to invalidate its metadata blob
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         invalidateRemoteMD (const std::string &remote_agent);
 
         /*** Metadata handling through direct channels (p2p socket and ETCD) ***/
@@ -401,10 +401,10 @@ class nixlAgent {
          *                       If IP unspecified, this will send your data to the metadata server.
          *                       Port can be specified or defaults to default_comm_port.
          *
-         * @return nixl_status_t Error code if call was not successful
+         * @return nixlStatus Error code if call was not successful
          */
-        nixl_status_t
-        sendLocalMD (const nixl_opt_args_t* extra_params = nullptr) const;
+        nixlStatus
+        sendLocalMD (const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Send partial metadata blob for this agent to peer or central metadata server
@@ -424,11 +424,11 @@ class nixlAgent {
          * @param  descs         [in]  Descriptor list to include in the metadata
          * @param  str           [out] The serialized metadata blob
          * @param  extra_params  [in]  Optional extra parameters used in getting partial metadata
-         * @return nixl_status_t       Error code if call was not successful
+         * @return nixlStatus       Error code if call was not successful
          */
-        nixl_status_t
-        sendLocalPartialMD(const nixl_reg_dlist_t &descs,
-                           const nixl_opt_args_t* extra_params = nullptr) const;
+        nixlStatus
+        sendLocalPartialMD(const nixlRegDlist &descs,
+                           const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Fetch other agent's metadata from a peer or central metadata server,
@@ -445,11 +445,11 @@ class nixlAgent {
          *                       to be fetched, which can be partial metadata. Otherwise, the default label
          *                       of the full metadata will be used for fetching.
          *
-         * @return nixl_status_t    Error code if call was not successful
+         * @return nixlStatus    Error code if call was not successful
          */
-        nixl_status_t
+        nixlStatus
         fetchRemoteMD (const std::string remote_name,
-                       const nixl_opt_args_t* extra_params = nullptr);
+                       const nixlAgentOptionalArgs* extra_params = nullptr);
 
         /**
          * @brief  Invalidate your own memory in one/all remote agent(s).
@@ -460,10 +460,10 @@ class nixlAgent {
          *                       from the metadata server.
          *                       Port can be specified or defaults to default_comm_port.
          *
-         * @return nixl_status_t    Error code if call was not successful
+         * @return nixlStatus    Error code if call was not successful
          */
-        nixl_status_t
-        invalidateLocalMD (const nixl_opt_args_t* extra_params = nullptr) const;
+        nixlStatus
+        invalidateLocalMD (const nixlAgentOptionalArgs* extra_params = nullptr) const;
 
         /**
          * @brief  Check if metadata is available for a remote agent.
@@ -471,11 +471,11 @@ class nixlAgent {
          *         can be specified; otherwise, empty `descs` can be passed.
          *
          * @param  str           Remote agent to check for
-         * @return nixl_status_t Error code, NOT_FOUND if metadata not found
+         * @return nixlStatus Error code, NOT_FOUND if metadata not found
          */
-        nixl_status_t
+        nixlStatus
         checkRemoteMD (const std::string remote_name,
-                       const nixl_xfer_dlist_t &descs) const;
+                       const nixlXferDlist &descs) const;
 
 };
 

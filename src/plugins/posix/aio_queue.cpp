@@ -23,7 +23,7 @@
 #include <time.h>
 #include <stdexcept>
 
-aioQueue::aioQueue(int num_entries, nixl_xfer_op_t operation)
+aioQueue::aioQueue(int num_entries, nixlXferOp operation)
     : aiocbs(num_entries),
       num_entries(num_entries),
       completed(num_entries),
@@ -52,7 +52,7 @@ aioQueue::~aioQueue() {
     }
 }
 
-nixl_status_t
+nixlStatus
 aioQueue::submit (const nixl_meta_dlist_t &, const nixl_meta_dlist_t &) {
     num_submitted = 0;
     // Submit all I/Os at once
@@ -94,7 +94,7 @@ aioQueue::submit (const nixl_meta_dlist_t &, const nixl_meta_dlist_t &) {
     return NIXL_IN_PROG;
 }
 
-nixl_status_t aioQueue::checkCompleted() {
+nixlStatus aioQueue::checkCompleted() {
     if (num_completed == num_entries)
         return NIXL_SUCCESS;
 
@@ -123,7 +123,7 @@ nixl_status_t aioQueue::checkCompleted() {
     return (num_completed == num_submitted) ? NIXL_SUCCESS : NIXL_IN_PROG;
 }
 
-nixl_status_t aioQueue::prepIO(int fd, void* buf, size_t len, off_t offset) {
+nixlStatus aioQueue::prepIO(int fd, void* buf, size_t len, off_t offset) {
     // Find an unused control block
     for (auto& aiocb : aiocbs) {
         if (aiocb.aio_fildes == 0) {

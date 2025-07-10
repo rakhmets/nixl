@@ -110,7 +110,7 @@ nixlBackendEngine *createEngine(std::string name, bool p_thread)
 {
     nixlBackendEngine     *mooncake;
     nixlBackendInitParams init;
-    nixl_b_params_t       custom_params;
+    nixlBParams       custom_params;
 
     init.enableProgTh = p_thread;
     init.pthrDelay    = 100;
@@ -133,7 +133,7 @@ void releaseEngine(nixlBackendEngine *mooncake)
     delete mooncake;
 }
 
-std::string memType2Str(nixl_mem_t mem_type)
+std::string memType2Str(nixlMemType mem_type)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -183,7 +183,7 @@ static int cudaQueryAddr(void *address, bool &is_dev,
 #endif
 
 
-void allocateBuffer(nixl_mem_t mem_type, int dev_id, size_t len, void* &addr)
+void allocateBuffer(nixlMemType mem_type, int dev_id, size_t len, void* &addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -210,7 +210,7 @@ void allocateBuffer(nixl_mem_t mem_type, int dev_id, size_t len, void* &addr)
     assert(addr);
 }
 
-void releaseBuffer(nixl_mem_t mem_type, int dev_id, void* &addr)
+void releaseBuffer(nixlMemType mem_type, int dev_id, void* &addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -228,7 +228,7 @@ void releaseBuffer(nixl_mem_t mem_type, int dev_id, void* &addr)
     }
 }
 
-void doMemset(nixl_mem_t mem_type, int dev_id, void *addr, char byte, size_t len)
+void doMemset(nixlMemType mem_type, int dev_id, void *addr, char byte, size_t len)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -246,7 +246,7 @@ void doMemset(nixl_mem_t mem_type, int dev_id, void *addr, char byte, size_t len
     }
 }
 
-void *getValidationPtr(nixl_mem_t mem_type, void *addr, size_t len)
+void *getValidationPtr(nixlMemType mem_type, void *addr, size_t len)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -265,7 +265,7 @@ void *getValidationPtr(nixl_mem_t mem_type, void *addr, size_t len)
     }
 }
 
-void *releaseValidationPtr(nixl_mem_t mem_type, void *addr)
+void *releaseValidationPtr(nixlMemType mem_type, void *addr)
 {
     switch(mem_type) {
     case DRAM_SEG:
@@ -300,7 +300,7 @@ void allocateWrongGPUTest(nixlBackendEngine* mooncake, int dev_id)
     releaseBuffer(VRAM_SEG, dev_id, buf);
 }
 
-void allocateAndRegister(nixlBackendEngine *mooncake, int dev_id, nixl_mem_t mem_type,
+void allocateAndRegister(nixlBackendEngine *mooncake, int dev_id, nixlMemType mem_type,
                          void* &addr, size_t len, nixlBackendMD* &md)
 {
     nixlBlobDesc desc;
@@ -316,7 +316,7 @@ void allocateAndRegister(nixlBackendEngine *mooncake, int dev_id, nixl_mem_t mem
     assert(ret == NIXL_SUCCESS);
 }
 
-void deallocateAndDeregister(nixlBackendEngine *mooncake, int dev_id, nixl_mem_t mem_type,
+void deallocateAndDeregister(nixlBackendEngine *mooncake, int dev_id, nixlMemType mem_type,
                              void* &addr, nixlBackendMD* &md)
 {
     mooncake->deregisterMem(md);
@@ -324,7 +324,7 @@ void deallocateAndDeregister(nixlBackendEngine *mooncake, int dev_id, nixl_mem_t
 }
 
 void loadRemote(nixlBackendEngine *mooncake, int dev_id, std::string agent,
-                nixl_mem_t mem_type, void *addr, size_t len,
+                nixlMemType mem_type, void *addr, size_t len,
                 nixlBackendMD* &lmd, nixlBackendMD* &rmd)
 {
     nixlBlobDesc info;
@@ -353,7 +353,7 @@ void populateDescs(nixl_meta_dlist_t &descs, int dev_id, void *addr, int desc_cn
     }
 }
 
-static string op2string(nixl_xfer_op_t op, bool hasNotif)
+static string op2string(nixlXferOp op, bool hasNotif)
 {
     if(op == NIXL_READ && !hasNotif)
         return string("READ");
@@ -372,12 +372,12 @@ void performTransfer(nixlBackendEngine *mooncake1, nixlBackendEngine *mooncake2,
                      nixl_meta_dlist_t &req_src_descs,
                      nixl_meta_dlist_t &req_dst_descs,
                      void* addr1, void* addr2, size_t len,
-                     nixl_xfer_op_t op,
+                     nixlXferOp op,
                      testHndlIterator &hiter,
                      bool progress, bool use_notif)
 {
     int ret2;
-    nixl_status_t ret3;
+    nixlStatus ret3;
     void *chkptr1, *chkptr2;
 
     std::string remote_agent ("Agent2");
@@ -465,7 +465,7 @@ void performTransfer(nixlBackendEngine *mooncake1, nixlBackendEngine *mooncake2,
     cout << "OK" << endl;
 }
 
-void test_intra_agent_transfer(bool p_thread, nixlBackendEngine *mooncake, nixl_mem_t mem_type)
+void test_intra_agent_transfer(bool p_thread, nixlBackendEngine *mooncake, nixlMemType mem_type)
 {
 
     std::cout << std::endl << std::endl;
@@ -477,7 +477,7 @@ void test_intra_agent_transfer(bool p_thread, nixlBackendEngine *mooncake, nixl_
     std::cout << std::endl << std::endl;
 
     std::string agent1("Agent1");
-    nixl_status_t ret1;
+    nixlStatus ret1;
 
     int iter = 10;
 
@@ -514,7 +514,7 @@ void test_intra_agent_transfer(bool p_thread, nixlBackendEngine *mooncake, nixl_
     nixl_meta_dlist_t req_dst_descs (mem_type);
     populateDescs(req_dst_descs, 0, addr2, desc_cnt, desc_size, rmd2);
 
-    nixl_xfer_op_t ops[] = {  NIXL_READ, NIXL_WRITE };
+    nixlXferOp ops[] = {  NIXL_READ, NIXL_WRITE };
     bool use_notifs[] = { false }; // Mooncake transfer engine doesn't support notifs
 
     for (size_t i = 0; i < sizeof(ops)/sizeof(ops[i]); i++) {
@@ -542,8 +542,8 @@ void test_intra_agent_transfer(bool p_thread, nixlBackendEngine *mooncake, nixl_
 }
 
 void test_inter_agent_transfer(bool p_thread, bool reuse_hndl,
-                                nixlBackendEngine *mooncake1, nixl_mem_t src_mem_type, int src_dev_id,
-                                nixlBackendEngine *mooncake2, nixl_mem_t dst_mem_type, int dst_dev_id)
+                                nixlBackendEngine *mooncake1, nixlMemType src_mem_type, int src_dev_id,
+                                nixlBackendEngine *mooncake2, nixlMemType dst_mem_type, int dst_dev_id)
 {
     int ret;
     int iter = 10;
@@ -601,7 +601,7 @@ void test_inter_agent_transfer(bool p_thread, bool reuse_hndl,
     nixl_meta_dlist_t req_dst_descs (dst_mem_type);
     populateDescs(req_dst_descs, dst_dev_id, addr2, desc_cnt, desc_size, rmd1);
 
-    nixl_xfer_op_t ops[] = {  NIXL_READ, NIXL_WRITE };
+    nixlXferOp ops[] = {  NIXL_READ, NIXL_WRITE };
     bool use_notifs[] = { false }; // Mooncake transfer engine doesn't support notifs
 
     for (size_t i = 0; i < sizeof(ops)/sizeof(ops[i]); i++) {

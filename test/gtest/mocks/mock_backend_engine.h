@@ -48,47 +48,47 @@ public:
     assert(sharedState > 0);
     return gmock_backend_engine->supportsProgTh();
   }
-  nixl_mem_list_t getSupportedMems() const override {
+  nixlMemList getSupportedMems() const override {
     assert(sharedState > 0);
     return gmock_backend_engine->getSupportedMems();
   }
-  nixl_status_t registerMem(const nixlBlobDesc &mem, const nixl_mem_t &nixl_mem,
+  nixlStatus registerMem(const nixlBlobDesc &mem, const nixlMemType &nixl_mem,
                             nixlBackendMD *&out) override;
-  nixl_status_t deregisterMem(nixlBackendMD *meta) override;
-  nixl_status_t connect(const std::string &remote_agent) override;
-  nixl_status_t disconnect(const std::string &remote_agent) override;
-  nixl_status_t unloadMD(nixlBackendMD *input) override;
-  nixl_status_t prepXfer(const nixl_xfer_op_t &operation,
+  nixlStatus deregisterMem(nixlBackendMD *meta) override;
+  nixlStatus connect(const std::string &remote_agent) override;
+  nixlStatus disconnect(const std::string &remote_agent) override;
+  nixlStatus unloadMD(nixlBackendMD *input) override;
+  nixlStatus prepXfer(const nixlXferOp &operation,
                          const nixl_meta_dlist_t &local,
                          const nixl_meta_dlist_t &remote,
                          const std::string &remote_agent,
                          nixlBackendReqH *&handle,
                          const nixl_opt_b_args_t *opt_args) const override;
-  nixl_status_t postXfer(const nixl_xfer_op_t &operation,
+  nixlStatus postXfer(const nixlXferOp &operation,
                          const nixl_meta_dlist_t &local,
                          const nixl_meta_dlist_t &remote,
                          const std::string &remote_agent,
                          nixlBackendReqH *&handle,
                          const nixl_opt_b_args_t *opt_args) const override;
-  nixl_status_t checkXfer(nixlBackendReqH *handle) const override;
-  nixl_status_t releaseReqH(nixlBackendReqH *handle) const override;
-  nixl_status_t getPublicData(const nixlBackendMD *meta, std::string &str) const override {
+  nixlStatus checkXfer(nixlBackendReqH *handle) const override;
+  nixlStatus releaseReqH(nixlBackendReqH *handle) const override;
+  nixlStatus getPublicData(const nixlBackendMD *meta, std::string &str) const override {
     assert(sharedState > 0);
     return gmock_backend_engine->getPublicData(meta, str);
   }
-  nixl_status_t getConnInfo(std::string &str) const override {
+  nixlStatus getConnInfo(std::string &str) const override {
     assert(sharedState > 0);
     return gmock_backend_engine->getConnInfo(str);
   }
-  nixl_status_t loadRemoteConnInfo(const std::string &remote_agent,
+  nixlStatus loadRemoteConnInfo(const std::string &remote_agent,
                                    const std::string &remote_conn_info);
-  nixl_status_t loadRemoteMD(const nixlBlobDesc &input,
-                             const nixl_mem_t &nixl_mem,
+  nixlStatus loadRemoteMD(const nixlBlobDesc &input,
+                             const nixlMemType &nixl_mem,
                              const std::string &remote_agent,
                              nixlBackendMD *&output) override;
-  nixl_status_t loadLocalMD(nixlBackendMD *input, nixlBackendMD *&output);
-  nixl_status_t getNotifs(notif_list_t &notif_list) override;
-  nixl_status_t genNotif(const std::string &remote_agent,
+  nixlStatus loadLocalMD(nixlBackendMD *input, nixlBackendMD *&output);
+  nixlStatus getNotifs(notif_list_t &notif_list) override;
+  nixlStatus genNotif(const std::string &remote_agent,
                          const std::string &msg) const override;
   int progress() override;
 

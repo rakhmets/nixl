@@ -27,7 +27,7 @@
 void testPerf(){
     int desc_count = 24*64*1024;
     void* buf = malloc(256);
-    nixl_xfer_dlist_t dlist (DRAM_SEG);
+    nixlXferDlist dlist (DRAM_SEG);
 
     struct timeval start_time, end_time, diff_time;
 
@@ -48,7 +48,7 @@ void testPerf(){
     std::cout << "time per desc " << time_per_desc << "us\n";
 
 
-    nixl_xfer_dlist_t dlist2 (DRAM_SEG, false, desc_count);
+    nixlXferDlist dlist2 (DRAM_SEG, false, desc_count);
 
     gettimeofday(&start_time, NULL);
 
@@ -236,13 +236,13 @@ int main()
     nixlBasicDesc b5 (305, 30, 4);
     nixlBasicDesc b6 (100, 30, 3);
 
-    nixl_xfer_dlist_t dlist10 (DRAM_SEG, false);
-    nixl_xfer_dlist_t dlist11 (DRAM_SEG, true);
-    nixl_xfer_dlist_t dlist12 (DRAM_SEG, true);
-    nixl_xfer_dlist_t dlist13 (DRAM_SEG, true);
-    nixl_xfer_dlist_t dlist14 (DRAM_SEG, true);
+    nixlXferDlist dlist10 (DRAM_SEG, false);
+    nixlXferDlist dlist11 (DRAM_SEG, true);
+    nixlXferDlist dlist12 (DRAM_SEG, true);
+    nixlXferDlist dlist13 (DRAM_SEG, true);
+    nixlXferDlist dlist14 (DRAM_SEG, true);
 
-    nixl_reg_dlist_t dlist20 (DRAM_SEG, true);
+    nixlRegDlist dlist20 (DRAM_SEG, true);
 
     dlist10.addDesc(b1);
     dlist10.addDesc(b2);
@@ -284,11 +284,11 @@ int main()
     nixlSerDes* ser_des2 = new nixlSerDes();
 
     assert(dlist10.serialize(ser_des) == 0);
-    nixl_xfer_dlist_t importList (ser_des);;
+    nixlXferDlist importList (ser_des);;
     assert(importList == dlist10);
 
     assert(dlist20.serialize(ser_des2) == 0);
-    nixl_reg_dlist_t importSList (ser_des2);
+    nixlRegDlist importSList (ser_des2);
     assert(importSList == dlist20);
 
     dlist10.print();
@@ -300,11 +300,11 @@ int main()
     importSList.print();
     std::cout << "\n";
 
-    nixl_reg_dlist_t dlist21 (DRAM_SEG, false);
-    nixl_reg_dlist_t dlist22 (DRAM_SEG, false);
-    nixl_reg_dlist_t dlist23 (DRAM_SEG, false);
-    nixl_reg_dlist_t dlist24 (DRAM_SEG, false);
-    nixl_reg_dlist_t dlist25 (DRAM_SEG, false);
+    nixlRegDlist dlist21 (DRAM_SEG, false);
+    nixlRegDlist dlist22 (DRAM_SEG, false);
+    nixlRegDlist dlist23 (DRAM_SEG, false);
+    nixlRegDlist dlist24 (DRAM_SEG, false);
+    nixlRegDlist dlist25 (DRAM_SEG, false);
 
     testPerf();
 

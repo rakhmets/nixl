@@ -42,14 +42,14 @@ static const char* get_plugin_version() {
 }
 
 // Function to get backend options
-static nixl_b_params_t get_backend_options() {
-    nixl_b_params_t params;
+static nixlBParams get_backend_options() {
+    nixlBParams params;
     return params;
 }
 
 // Function to get supported backend mem types
-static nixl_mem_list_t get_backend_mems() {
-    nixl_mem_list_t mems;
+static nixlMemList get_backend_mems() {
+    nixlMemList mems;
     mems.push_back(DRAM_SEG);
     mems.push_back(VRAM_SEG);
     mems.push_back(FILE_SEG);

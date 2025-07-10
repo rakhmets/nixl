@@ -87,23 +87,23 @@ namespace agent {
             return gmock_engine_;
         }
 
-        nixl_status_t
-        CreateBackendWithGMock(nixl_b_params_t &params, nixlBackendH *&backend) {
+        nixlStatus
+        CreateBackendWithGMock(nixlBParams &params, nixlBackendH *&backend) {
             gmock_engine_.SetToParams(params);
             return agent_->createBackend(GetMockBackendName(), params, backend);
         }
 
-        nixl_status_t
+        nixlStatus
         GetAndLoadRemoteMD(nixlAgent *remote_agent, std::string &remote_agent_name_out) {
             std::string remote_metadata;
             EXPECT_EQ(remote_agent->getLocalMD(remote_metadata), NIXL_SUCCESS);
             return agent_->loadRemoteMD(remote_metadata, remote_agent_name_out);
         }
 
-        nixl_status_t
+        nixlStatus
         InitAndRegisterMemory(Blob &blob,
-                              nixl_reg_dlist_t &reg_dlist,
-                              nixl_opt_args_t &extra_params,
+                              nixlRegDlist &reg_dlist,
+                              nixlAgentOptionalArgs &extra_params,
                               nixlBackendH *backend) {
             reg_dlist.addDesc(blob.GetDesc());
             extra_params.backends.push_back(backend);
@@ -137,7 +137,7 @@ namespace agent {
         }
     };
 
-    class SingleAgentWithMemParamFixture : public testing::TestWithParam<nixl_mem_t> {
+    class SingleAgentWithMemParamFixture : public testing::TestWithParam<nixlMemType> {
     protected:
         std::unique_ptr<AgentHelper> agent_helper_;
         nixlAgent *agent_;
@@ -150,21 +150,21 @@ namespace agent {
     };
 
     TEST_F(SingleAgentSessionFixture, GetNonExistingPluginTest) {
-        nixl_mem_list_t mem;
-        nixl_b_params_t params;
+        nixlMemList mem;
+        nixlBParams params;
 
         EXPECT_NE(agent_->getPluginParams(nonexisting_plugin, mem, params), NIXL_SUCCESS);
     }
 
     TEST_F(SingleAgentSessionFixture, GetExistingPluginTest) {
-        std::vector<nixl_backend_t> plugins;
+        std::vector<nixlBackend> plugins;
         EXPECT_EQ(agent_->getAvailPlugins(plugins), NIXL_SUCCESS);
         if (plugins.empty()) {
             GTEST_SKIP();
         }
 
-        nixl_mem_list_t mem;
-        nixl_b_params_t params;
+        nixlMemList mem;
+        nixlBParams params;
         EXPECT_EQ(agent_->getPluginParams(plugins.front(), mem, params), NIXL_SUCCESS);
     }
 
@@ -172,14 +172,14 @@ namespace agent {
         nixlPluginManager &plugin_manager = nixlPluginManager::getInstance();
         EXPECT_EQ(plugin_manager.loadPlugin(nonexisting_plugin), nullptr);
 
-        nixl_b_params_t params;
+        nixlBParams params;
         nixlBackendH *backend;
         EXPECT_NE(agent_->createBackend(nonexisting_plugin, params, backend), NIXL_SUCCESS);
     }
 
     TEST_F(SingleAgentSessionFixture, CreateExistingPluginBackendTest) {
-        nixl_mem_list_t mem;
-        nixl_b_params_t params;
+        nixlMemList mem;
+        nixlBParams params;
         EXPECT_EQ(agent_->getPluginParams(GetMockBackendName(), mem, params), NIXL_SUCCESS);
 
         nixlBackendH *backend;
@@ -187,21 +187,21 @@ namespace agent {
     }
 
     TEST_F(SingleAgentSessionFixture, GetNonExistingBackendParamsTest) {
-        nixl_mem_list_t mem;
-        nixl_b_params_t params;
+        nixlMemList mem;
+        nixlBParams params;
         EXPECT_NE(agent_->getBackendParams(nullptr, mem, params), NIXL_SUCCESS);
     }
 
     TEST_F(SingleAgentSessionFixture, GetExistingBackendParamsTest) {
-        nixl_mem_list_t mem;
-        nixl_b_params_t params;
+        nixlMemList mem;
+        nixlBParams params;
         nixlBackendH *backend;
         EXPECT_EQ(agent_helper_->CreateBackendWithGMock(params, backend), NIXL_SUCCESS);
         EXPECT_EQ(agent_->getBackendParams(backend, mem, params), NIXL_SUCCESS);
     }
 
     TEST_F(SingleAgentSessionFixture, GetLocalMetadataTest) {
-        nixl_b_params_t params;
+        nixlBParams params;
         nixlBackendH *backend;
         EXPECT_EQ(agent_helper_->CreateBackendWithGMock(params, backend), NIXL_SUCCESS);
 
@@ -211,13 +211,13 @@ namespace agent {
     }
 
     TEST_P(SingleAgentWithMemParamFixture, RegisterMemoryTest) {
-        nixl_b_params_t params;
+        nixlBParams params;
         nixlBackendH *backend;
         EXPECT_EQ(agent_helper_->CreateBackendWithGMock(params, backend), NIXL_SUCCESS);
 
         Blob blob;
-        nixl_opt_args_t extra_params;
-        nixl_reg_dlist_t reg_dlist(GetParam());
+        nixlAgentOptionalArgs extra_params;
+        nixlRegDlist reg_dlist(GetParam());
         EXPECT_EQ(agent_helper_->InitAndRegisterMemory(blob, reg_dlist, extra_params, backend),
                   NIXL_SUCCESS);
         EXPECT_EQ(agent_->deregisterMem(reg_dlist, &extra_params), NIXL_SUCCESS);
@@ -240,7 +240,7 @@ namespace agent {
                              testing::Values(FILE_SEG));
 
     TEST_F(DualAgentBridgeFixture, LoadRemoteMetadataTest) {
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
@@ -254,7 +254,7 @@ namespace agent {
     }
 
     TEST_F(DualAgentBridgeFixture, InvalidateRemoteMetadataTest) {
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
@@ -276,15 +276,15 @@ namespace agent {
                 return NIXL_SUCCESS;
             });
 
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
         EXPECT_EQ(remote_agent_helper_->CreateBackendWithGMock(remote_params, remote_backend),
                   NIXL_SUCCESS);
 
-        nixl_reg_dlist_t local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
-        nixl_opt_args_t local_extra_params, remote_extra_params;
+        nixlRegDlist local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
+        nixlAgentOptionalArgs local_extra_params, remote_extra_params;
         Blob local_blob, remote_blob;
         EXPECT_EQ(local_agent_helper_->InitAndRegisterMemory(
                       local_blob, local_reg_dlist, local_extra_params, local_backend),
@@ -297,7 +297,7 @@ namespace agent {
         EXPECT_EQ(local_agent_helper_->GetAndLoadRemoteMD(remote_agent_, remote_agent_name_out),
                   NIXL_SUCCESS);
 
-        nixl_xfer_dlist_t local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
+        nixlXferDlist local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
         local_xfer_dlist.addDesc(local_blob.GetDesc());
         remote_xfer_dlist.addDesc(remote_blob.GetDesc());
 
@@ -314,7 +314,7 @@ namespace agent {
         EXPECT_EQ(local_agent_->postXferReq(xfer_req), NIXL_SUCCESS);
         EXPECT_EQ(local_agent_->getXferStatus(xfer_req), NIXL_SUCCESS);
 
-        nixl_notifs_t notif_map;
+        nixlNotifs notif_map;
         EXPECT_EQ(remote_agent_->getNotifs(notif_map), NIXL_SUCCESS);
         EXPECT_EQ(notif_map.size(), 1);
         EXPECT_EQ(notif_map[local_agent_name].size(), 1);
@@ -331,15 +331,15 @@ namespace agent {
                 return NIXL_SUCCESS;
             });
 
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
         EXPECT_EQ(remote_agent_helper_->CreateBackendWithGMock(remote_params, remote_backend),
                   NIXL_SUCCESS);
 
-        nixl_reg_dlist_t local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
-        nixl_opt_args_t local_extra_params, remote_extra_params;
+        nixlRegDlist local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
+        nixlAgentOptionalArgs local_extra_params, remote_extra_params;
         Blob local_blob, remote_blob;
         EXPECT_EQ(local_agent_helper_->InitAndRegisterMemory(
                       local_blob, local_reg_dlist, local_extra_params, local_backend),
@@ -352,7 +352,7 @@ namespace agent {
         EXPECT_EQ(local_agent_helper_->GetAndLoadRemoteMD(remote_agent_, remote_agent_name_out),
                   NIXL_SUCCESS);
 
-        nixl_xfer_dlist_t local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
+        nixlXferDlist local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
         local_xfer_dlist.addDesc(local_blob.GetDesc());
         remote_xfer_dlist.addDesc(remote_blob.GetDesc());
 
@@ -381,7 +381,7 @@ namespace agent {
 
         EXPECT_EQ(local_agent_->getXferStatus(xfer_req), NIXL_SUCCESS);
 
-        nixl_notifs_t notif_map;
+        nixlNotifs notif_map;
         EXPECT_EQ(remote_agent_->getNotifs(notif_map), NIXL_SUCCESS);
         EXPECT_EQ(notif_map.size(), 1);
         EXPECT_EQ(notif_map[local_agent_name].size(), 1);
@@ -400,7 +400,7 @@ namespace agent {
                 return NIXL_SUCCESS;
             });
 
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
@@ -412,7 +412,7 @@ namespace agent {
                   NIXL_SUCCESS);
         EXPECT_EQ(local_agent_->genNotif(remote_agent_name_out, msg), NIXL_SUCCESS);
 
-        nixl_notifs_t notif_map;
+        nixlNotifs notif_map;
         EXPECT_EQ(remote_agent_->getNotifs(notif_map), NIXL_SUCCESS);
         EXPECT_EQ(notif_map.size(), 1);
         EXPECT_EQ(notif_map[local_agent_name].size(), 1);
@@ -420,15 +420,15 @@ namespace agent {
     }
 
     TEST_F(DualAgentBridgeFixture, QueryXferBackendTest) {
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);
         EXPECT_EQ(remote_agent_helper_->CreateBackendWithGMock(remote_params, remote_backend),
                   NIXL_SUCCESS);
 
-        nixl_reg_dlist_t local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
-        nixl_opt_args_t local_extra_params, remote_extra_params;
+        nixlRegDlist local_reg_dlist(DRAM_SEG), remote_reg_dlist(DRAM_SEG);
+        nixlAgentOptionalArgs local_extra_params, remote_extra_params;
         Blob local_blob, remote_blob;
         EXPECT_EQ(local_agent_helper_->InitAndRegisterMemory(
                       local_blob, local_reg_dlist, local_extra_params, local_backend),
@@ -441,7 +441,7 @@ namespace agent {
         EXPECT_EQ(local_agent_helper_->GetAndLoadRemoteMD(remote_agent_, remote_agent_name_out),
                   NIXL_SUCCESS);
 
-        nixl_xfer_dlist_t local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
+        nixlXferDlist local_xfer_dlist(DRAM_SEG), remote_xfer_dlist(DRAM_SEG);
         local_xfer_dlist.addDesc(local_blob.GetDesc());
         remote_xfer_dlist.addDesc(remote_blob.GetDesc());
 
@@ -462,7 +462,7 @@ namespace agent {
     }
 
     TEST_F(DualAgentBridgeFixture, MakeConnectionTest) {
-        nixl_b_params_t local_params, remote_params;
+        nixlBParams local_params, remote_params;
         nixlBackendH *local_backend, *remote_backend;
         EXPECT_EQ(local_agent_helper_->CreateBackendWithGMock(local_params, local_backend),
                   NIXL_SUCCESS);

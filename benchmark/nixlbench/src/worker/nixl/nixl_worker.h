@@ -33,7 +33,7 @@ class xferBenchNixlWorker: public xferBenchWorker {
     private:
         nixlAgent* agent;
         nixlBackendH* backend_engine;
-        nixl_mem_t seg_type;
+        nixlMemType seg_type;
         std::vector<int> remote_fds;
         std::vector<std::vector<xferBenchIOV>> remote_iovs;
     public:

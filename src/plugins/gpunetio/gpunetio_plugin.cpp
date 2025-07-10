@@ -50,9 +50,9 @@ get_plugin_version() {
 }
 
 // Function to get backend options
-static nixl_b_params_t
+static nixlBParams
 get_backend_options() {
-    nixl_b_params_t params;
+    nixlBParams params;
     params["network_devices"] = "";
     params["gpu_devices"] = "";
     params["cuda_streams"] = "";
@@ -60,9 +60,9 @@ get_backend_options() {
 }
 
 // Function to get supported backend mem types
-static nixl_mem_list_t
+static nixlMemList
 get_backend_mems() {
-    nixl_mem_list_t mems;
+    nixlMemList mems;
     mems.push_back (DRAM_SEG);
     mems.push_back (VRAM_SEG);
     return mems;

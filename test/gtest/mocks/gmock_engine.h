@@ -57,65 +57,65 @@ public:
     GMockBackendEngine();
 
     void
-    SetToParams(nixl_b_params_t &params) const;
+    SetToParams(nixlBParams &params) const;
     static GMockBackendEngine *
-    GetFromParams(nixl_b_params_t *params);
+    GetFromParams(nixlBParams *params);
 
     MOCK_METHOD(bool, supportsRemote, (), (const, override));
     MOCK_METHOD(bool, supportsLocal, (), (const, override));
     MOCK_METHOD(bool, supportsNotif, (), (const, override));
     MOCK_METHOD(bool, supportsProgTh, (), (const, override));
-    MOCK_METHOD(nixl_mem_list_t, getSupportedMems, (), (const, override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlMemList, getSupportedMems, (), (const, override));
+    MOCK_METHOD(nixlStatus,
                 registerMem,
-                (const nixlBlobDesc &desc, const nixl_mem_t &mem, nixlBackendMD *&out),
+                (const nixlBlobDesc &desc, const nixlMemType &mem, nixlBackendMD *&out),
                 (override));
-    MOCK_METHOD(nixl_status_t, deregisterMem, (nixlBackendMD * meta), (override));
-    MOCK_METHOD(nixl_status_t, connect, (const std::string &remote_agent), (override));
-    MOCK_METHOD(nixl_status_t, disconnect, (const std::string &remote_agent), (override));
-    MOCK_METHOD(nixl_status_t, unloadMD, (nixlBackendMD * input), (override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus, deregisterMem, (nixlBackendMD * meta), (override));
+    MOCK_METHOD(nixlStatus, connect, (const std::string &remote_agent), (override));
+    MOCK_METHOD(nixlStatus, disconnect, (const std::string &remote_agent), (override));
+    MOCK_METHOD(nixlStatus, unloadMD, (nixlBackendMD * input), (override));
+    MOCK_METHOD(nixlStatus,
                 prepXfer,
-                (const nixl_xfer_op_t &op,
+                (const nixlXferOp &op,
                  const nixl_meta_dlist_t &src,
                  const nixl_meta_dlist_t &dst,
                  const std::string &remote_agent,
                  nixlBackendReqH *&req,
                  const nixl_opt_b_args_t *extra_args),
                 (const, override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus,
                 postXfer,
-                (const nixl_xfer_op_t &op,
+                (const nixlXferOp &op,
                  const nixl_meta_dlist_t &src,
                  const nixl_meta_dlist_t &dst,
                  const std::string &remote_agent,
                  nixlBackendReqH *&req,
                  const nixl_opt_b_args_t *extra_args),
                 (const, override));
-    MOCK_METHOD(nixl_status_t, checkXfer, (nixlBackendReqH * req), (const, override));
-    MOCK_METHOD(nixl_status_t, releaseReqH, (nixlBackendReqH * req), (const, override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus, checkXfer, (nixlBackendReqH * req), (const, override));
+    MOCK_METHOD(nixlStatus, releaseReqH, (nixlBackendReqH * req), (const, override));
+    MOCK_METHOD(nixlStatus,
                 getPublicData,
                 (const nixlBackendMD *input, std::string &str),
                 (const, override));
-    MOCK_METHOD(nixl_status_t, getConnInfo, (std::string & str), (const, override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus, getConnInfo, (std::string & str), (const, override));
+    MOCK_METHOD(nixlStatus,
                 loadRemoteConnInfo,
                 (const std::string &remote_agent, const std::string &remote_conn_info),
                 (override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus,
                 loadRemoteMD,
                 (const nixlBlobDesc &input,
-                 const nixl_mem_t &nixl_mem,
+                 const nixlMemType &nixl_mem,
                  const std::string &remote_agent,
                  nixlBackendMD *&output),
                 (override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus,
                 loadLocalMD,
                 (nixlBackendMD * input, nixlBackendMD *&output),
                 (override));
-    MOCK_METHOD(nixl_status_t, getNotifs, (notif_list_t & notif_list), (override));
-    MOCK_METHOD(nixl_status_t,
+    MOCK_METHOD(nixlStatus, getNotifs, (notif_list_t & notif_list), (override));
+    MOCK_METHOD(nixlStatus,
                 genNotif,
                 (const std::string &remote_agent, const std::string &msg),
                 (const, override));

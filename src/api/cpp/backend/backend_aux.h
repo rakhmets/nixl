@@ -30,9 +30,9 @@ typedef std::vector<std::pair<std::string, std::string>> notif_list_t;
 
 struct nixlBackendOptionalArgs {
     // During postXfer, user might ask for a notification if supported
-    nixl_blob_t notifMsg;
+    nixlBlob notifMsg;
     bool        hasNotif = false;
-    nixl_blob_t customParam;
+    nixlBlob customParam;
 };
 
 using nixl_opt_b_args_t = nixlBackendOptionalArgs;
@@ -46,12 +46,12 @@ class nixlBackendInitParams {
     public:
         std::string       localAgent;
 
-        nixl_backend_t    type;
-        nixl_b_params_t*  customParams;
+        nixlBackend    type;
+        nixlBParams*  customParams;
 
         bool              enableProgTh;
         nixlTime::us_t    pthrDelay;
-        nixl_thread_sync_t syncMode;
+        nixlThreadSync syncMode;
 };
 
 // Pure virtual class to have a common pointer type

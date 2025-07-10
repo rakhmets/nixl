@@ -139,8 +139,8 @@ namespace {
                            size_t transfer_size,
                            int num_transfers,
                            ThreadStats& write_stats,
-                           const nixl_reg_dlist_t& dram_list,
-                           const nixl_reg_dlist_t& file_list,
+                           const nixlRegDlist& dram_list,
+                           const nixlRegDlist& file_list,
                            size_t start_idx,
                            nixlXferReqH* write_req) {
         try {
@@ -208,8 +208,8 @@ namespace {
                           size_t transfer_size,
                           int num_transfers,
                           ThreadStats& read_stats,
-                          const nixl_reg_dlist_t& dram_list,
-                          const nixl_reg_dlist_t& file_list,
+                          const nixlRegDlist& dram_list,
+                          const nixlRegDlist& file_list,
                           size_t start_idx,
                           nixlXferReqH* read_req) {
         try {
@@ -306,13 +306,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize NIXL
-    nixlAgentConfig cfg(true, false, 0, nixl_thread_sync_t::NIXL_THREAD_SYNC_STRICT);
-    nixl_b_params_t params;
+    nixlAgentConfig cfg(true, false, 0, nixlThreadSync::NIXL_THREAD_SYNC_STRICT);
+    nixlBParams params;
     nixlAgent agent("HF3FSMultiThreadTester", cfg);
 
     // Create HF3FS backend
     nixlBackendH* hf3fs = nullptr;
-    nixl_status_t ret = agent.createBackend("HF3FS", params, hf3fs);
+    nixlStatus ret = agent.createBackend("HF3FS", params, hf3fs);
     if (ret != NIXL_SUCCESS) {
         std::cerr << "Error creating HF3FS backend: " << ret << std::endl;
         return 1;
@@ -325,8 +325,8 @@ int main(int argc, char *argv[]) {
 
     // Pre-allocate and register all DRAM buffers
     std::vector<std::unique_ptr<void, void(*)(void*)>> dram_buffers;
-    nixl_reg_dlist_t dram_list(DRAM_SEG);
-    nixl_reg_dlist_t file_list(FILE_SEG);
+    nixlRegDlist dram_list(DRAM_SEG);
+    nixlRegDlist file_list(FILE_SEG);
 
     // Pre-create all test files
     std::vector<tempFile> files;
@@ -384,10 +384,10 @@ int main(int argc, char *argv[]) {
     std::vector<nixlXferReqH*> read_requests(num_threads, nullptr);
 
     // Temporary lists for request creation
-    std::vector<nixl_xfer_dlist_t> write_dram_lists;
-    std::vector<nixl_xfer_dlist_t> write_file_lists;
-    std::vector<nixl_xfer_dlist_t> read_dram_lists;
-    std::vector<nixl_xfer_dlist_t> read_file_lists;
+    std::vector<nixlXferDlist> write_dram_lists;
+    std::vector<nixlXferDlist> write_file_lists;
+    std::vector<nixlXferDlist> read_dram_lists;
+    std::vector<nixlXferDlist> read_file_lists;
 
     // Create all write requests
     std::cout << "\n=== PREPARING WRITE REQUESTS ===" << std::endl;
@@ -395,8 +395,8 @@ int main(int argc, char *argv[]) {
         size_t start_idx = i * transfers_per_thread;
 
         // Create subset lists for this thread's range
-        nixl_reg_dlist_t thread_dram_list(DRAM_SEG);
-        nixl_reg_dlist_t thread_file_list(FILE_SEG);
+        nixlRegDlist thread_dram_list(DRAM_SEG);
+        nixlRegDlist thread_file_list(FILE_SEG);
 
         for (int j = 0; j < transfers_per_thread; j++) {
             thread_dram_list.addDesc(dram_list[start_idx + j]);
@@ -428,8 +428,8 @@ int main(int argc, char *argv[]) {
         size_t start_idx = i * transfers_per_thread;
 
         // Create subset lists for this thread's range
-        nixl_reg_dlist_t thread_dram_list(DRAM_SEG);
-        nixl_reg_dlist_t thread_file_list(FILE_SEG);
+        nixlRegDlist thread_dram_list(DRAM_SEG);
+        nixlRegDlist thread_file_list(FILE_SEG);
 
         for (int j = 0; j < transfers_per_thread; j++) {
             thread_dram_list.addDesc(dram_list[start_idx + j]);

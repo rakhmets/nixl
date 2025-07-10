@@ -38,7 +38,7 @@ nixlBasicDesc::nixlBasicDesc(const uintptr_t &addr,
     this->devId = dev_id;
 }
 
-nixlBasicDesc::nixlBasicDesc(const nixl_blob_t &blob) {
+nixlBasicDesc::nixlBasicDesc(const nixlBlob &blob) {
     if (blob.size()==sizeof(nixlBasicDesc)) {
         blob.copy(reinterpret_cast<char*>(this), sizeof(nixlBasicDesc));
     } else { // Error indicator, not possible by descList deserializer call
@@ -84,7 +84,7 @@ bool nixlBasicDesc::overlaps (const nixlBasicDesc &query) const {
     return true;
 }
 
-nixl_blob_t nixlBasicDesc::serialize() const {
+nixlBlob nixlBasicDesc::serialize() const {
     return std::string(reinterpret_cast<const char*>(this),
                        sizeof(nixlBasicDesc));
 }
@@ -100,18 +100,18 @@ void nixlBasicDesc::print(const std::string &suffix) const {
 nixlBlobDesc::nixlBlobDesc(const uintptr_t &addr,
                            const size_t &len,
                            const uint64_t &dev_id,
-                           const nixl_blob_t &meta_info) :
+                           const nixlBlob &meta_info) :
                            nixlBasicDesc(addr, len, dev_id) {
     this->metaInfo = meta_info;
 }
 
 nixlBlobDesc::nixlBlobDesc(const nixlBasicDesc &desc,
-                           const nixl_blob_t &meta_info) :
+                           const nixlBlob &meta_info) :
                            nixlBasicDesc(desc) {
     this->metaInfo = meta_info;
 }
 
-nixlBlobDesc::nixlBlobDesc(const nixl_blob_t &blob) {
+nixlBlobDesc::nixlBlobDesc(const nixlBlob &blob) {
     size_t meta_size = blob.size() - sizeof(nixlBasicDesc);
     if (meta_size > 0) {
         metaInfo.resize(meta_size);
@@ -133,7 +133,7 @@ bool operator==(const nixlBlobDesc &lhs, const nixlBlobDesc &rhs) {
                   (lhs.metaInfo == rhs.metaInfo));
 }
 
-nixl_blob_t nixlBlobDesc::serialize() const {
+nixlBlob nixlBlobDesc::serialize() const {
     return nixlBasicDesc::serialize() + metaInfo;
 }
 
@@ -147,7 +147,7 @@ void nixlBlobDesc::print(const std::string &suffix) const {
 // There are no virtual functions, so the object is all data, no pointers.
 
 template <class T>
-nixlDescList<T>::nixlDescList (const nixl_mem_t &type,
+nixlDescList<T>::nixlDescList (const nixlMemType &type,
                                const bool &sorted,
                                const int &init_size) {
     static_assert (std::is_base_of<nixlBasicDesc, T>::value);
@@ -361,9 +361,9 @@ int nixlDescList<T>::getIndex(const nixlBasicDesc &query) const {
 }
 
 template <class T>
-nixl_status_t nixlDescList<T>::serialize(nixlSerDes* serializer) const {
+nixlStatus nixlDescList<T>::serialize(nixlSerDes* serializer) const {
 
-    nixl_status_t ret;
+    nixlStatus ret;
     size_t n_desc = descs.size();
 
     // nixlMetaDesc should be internal and not be serialized

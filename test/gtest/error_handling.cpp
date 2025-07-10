@@ -28,14 +28,14 @@ namespace nixl {
 
     static nixlBackendH* createUcxBackend(nixlAgent& agent, const std::string& backend_name)
     {
-        std::vector<nixl_backend_t> plugins;
-        nixl_status_t status = agent.getAvailPlugins(plugins);
+        std::vector<nixlBackend> plugins;
+        nixlStatus status = agent.getAvailPlugins(plugins);
         EXPECT_EQ(status, NIXL_SUCCESS);
         auto it = std::find(plugins.begin(), plugins.end(), backend_name);
         EXPECT_NE(it, plugins.end()) << "UCX plugin not found";
 
-        nixl_b_params_t params;
-        nixl_mem_list_t mems;
+        nixlBParams params;
+        nixlMemList mems;
         status = agent.getPluginParams(*it, mems, params);
         EXPECT_EQ(NIXL_SUCCESS, status);
 
@@ -73,24 +73,24 @@ class TestErrorHandling : public testing::TestWithParam<std::string> {
 
             static constexpr size_t m_data_size = 256;
             std::vector<std::byte>  m_data = std::vector<std::byte>(m_data_size);
-            nixl_opt_args_t         m_params;
-            nixl_reg_dlist_t        m_dlist;
+            nixlAgentOptionalArgs   m_params;
+            nixlRegDlist        m_dlist;
             nixlBlobDesc            m_desc;
         };
 
     public:
         void init(const std::string& name, const std::string& backend_name);
         void destroy();
-        void fillRegList(nixl_xfer_dlist_t& dlist, nixlBasicDesc& desc) const;
+        void fillRegList(nixlXferDlist& dlist, nixlBasicDesc& desc) const;
         std::string getLocalMD() const;
         void loadRemoteMD(const std::string& remote_name);
-        nixl_status_t createXferReq(const nixl_xfer_op_t& op,
-                                    nixl_xfer_dlist_t& sReq_descs,
-                                    nixl_xfer_dlist_t& rReq_descs,
+        nixlStatus createXferReq(const nixlXferOp& op,
+                                    nixlXferDlist& sReq_descs,
+                                    nixlXferDlist& rReq_descs,
                                     nixlXferReqH*& req_handle) const;
-        nixl_status_t postXferReq(nixlXferReqH* req_handle) const;
-        nixl_status_t waitForCompletion(nixlXferReqH* req_handle);
-        nixl_status_t waitForNotif(const std::string& expectedNotif);
+        nixlStatus postXferReq(nixlXferReqH* req_handle) const;
+        nixlStatus waitForCompletion(nixlXferReqH* req_handle);
+        nixlStatus waitForNotif(const std::string& expectedNotif);
         void fillData();
         bool dataCmp(const Agent& other) const;
 
@@ -109,13 +109,13 @@ protected:
     };
 
     TestErrorHandling();
-    template<TestType test_type, enum nixl_xfer_op_t op> void testXfer();
+    template<TestType test_type, enum nixlXferOp op> void testXfer();
 
 private:
     template<TestType test_type> bool isFailure(size_t iter);
     template<TestType test_type> size_t numIter();
     void exchangeMetaData();
-    nixlXferReqH* postXfer(enum nixl_xfer_op_t op, bool target_failure);
+    nixlXferReqH* postXfer(enum nixlXferOp op, bool target_failure);
 
     ScopedEnv    m_env;
     Agent        m_Initiator;
@@ -140,7 +140,7 @@ void TestErrorHandling::Agent::destroy() {
     m_priv.reset();
 }
 
-void TestErrorHandling::Agent::fillRegList(nixl_xfer_dlist_t& dlist,
+void TestErrorHandling::Agent::fillRegList(nixlXferDlist& dlist,
                                         nixlBasicDesc& desc) const {
     nixl::fillRegList(dlist, desc, m_mem.m_data);
 }
@@ -155,26 +155,26 @@ void TestErrorHandling::Agent::loadRemoteMD(const std::string& remote_name) {
     EXPECT_EQ(NIXL_SUCCESS, m_priv->loadRemoteMD(remote_name, m_MetaRemote));
 }
 
-nixl_status_t
-TestErrorHandling::Agent::createXferReq(const nixl_xfer_op_t& op,
-                                     nixl_xfer_dlist_t& sReq_descs,
-                                     nixl_xfer_dlist_t& rReq_descs,
+nixlStatus
+TestErrorHandling::Agent::createXferReq(const nixlXferOp& op,
+                                     nixlXferDlist& sReq_descs,
+                                     nixlXferDlist& rReq_descs,
                                      nixlXferReqH*& req_handle) const {
-    nixl_opt_args_t extra_params = { .backends = {m_backend} };
+    nixlAgentOptionalArgs extra_params = { .backends = {m_backend} };
     extra_params.notifMsg        = "notification";
     extra_params.hasNotif        = true;
     return m_priv->createXferReq(op, sReq_descs, rReq_descs, m_MetaRemote,
                                  req_handle, &extra_params);
 }
 
-nixl_status_t
+nixlStatus
 TestErrorHandling::Agent::postXferReq(nixlXferReqH* req_handle) const {
     return m_priv->postXferReq(req_handle);
 }
 
-nixl_status_t
+nixlStatus
 TestErrorHandling::Agent::waitForCompletion(nixlXferReqH* req_handle) {
-    nixl_status_t status;
+    nixlStatus status;
 
     do {
         status = m_priv->getXferStatus(req_handle);
@@ -184,9 +184,9 @@ TestErrorHandling::Agent::waitForCompletion(nixlXferReqH* req_handle) {
     return status;
 }
 
-nixl_status_t
+nixlStatus
 TestErrorHandling::Agent::waitForNotif(const std::string& expectedNotif) {
-    nixl_notifs_t notif_map;
+    nixlNotifs notif_map;
 
     do {
         EXPECT_EQ(NIXL_SUCCESS, m_priv->getNotifs(notif_map));
@@ -214,7 +214,7 @@ TestErrorHandling::TestErrorHandling() : m_backend_name(GetParam())
     m_env.addVar("NIXL_PLUGIN_DIR", std::string(BUILD_DIR) + "/src/plugins/ucx");
 }
 
-template<TestErrorHandling::TestType test_type, enum nixl_xfer_op_t op>
+template<TestErrorHandling::TestType test_type, enum nixlXferOp op>
 void TestErrorHandling::testXfer() {
     m_Initiator.init("initiator", m_backend_name);
     m_Target.init("target", m_backend_name);
@@ -223,7 +223,7 @@ void TestErrorHandling::testXfer() {
 
     for (size_t i = 0; i < numIter<test_type>(); ++i) {
         nixlXferReqH* req_handle = postXfer(op, isFailure<test_type>(i));
-        nixl_status_t status     = m_Initiator.waitForCompletion(req_handle);
+        nixlStatus status     = m_Initiator.waitForCompletion(req_handle);
 
         if (isFailure<test_type>(i)) {
             EXPECT_EQ(NIXL_ERR_REMOTE_DISCONNECT, status);
@@ -269,19 +269,19 @@ void TestErrorHandling::exchangeMetaData() {
 }
 
 nixlXferReqH*
-TestErrorHandling::postXfer(enum nixl_xfer_op_t op, bool target_failure) {
+TestErrorHandling::postXfer(enum nixlXferOp op, bool target_failure) {
     EXPECT_TRUE(op == NIXL_WRITE || op == NIXL_READ);
 
     nixlBasicDesc sReq_src;
-    nixl_xfer_dlist_t sReq_descs(DRAM_SEG);
+    nixlXferDlist sReq_descs(DRAM_SEG);
     m_Initiator.fillRegList(sReq_descs, sReq_src);
 
     nixlBasicDesc rReq_dst;
-    nixl_xfer_dlist_t rReq_descs(DRAM_SEG);
+    nixlXferDlist rReq_descs(DRAM_SEG);
     m_Target.fillRegList(rReq_descs, rReq_dst);
 
     nixlXferReqH* req_handle;
-    nixl_status_t status;
+    nixlStatus status;
 
     status = m_Initiator.createXferReq(op, sReq_descs, rReq_descs, req_handle);
     EXPECT_EQ(NIXL_SUCCESS, status)

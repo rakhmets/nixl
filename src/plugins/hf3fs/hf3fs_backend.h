@@ -31,7 +31,7 @@
 class nixlHf3fsMetadata : public nixlBackendMD {
     public:
         hf3fsFileHandle  handle;
-        nixl_mem_t     type;
+        nixlMemType     type;
 
         nixlHf3fsMetadata() : nixlBackendMD(true) { }
         ~nixlHf3fsMetadata() { }
@@ -53,7 +53,7 @@ class nixlHf3fsIO {
 class nixlH3fsThreadStatus {
     public:
         std::thread *thread;
-        nixl_status_t error_status;
+        nixlStatus error_status;
         std::string error_message;
         bool stop_thread;
 
@@ -103,53 +103,53 @@ class nixlHf3fsEngine : public nixlBackendEngine {
             return false;
         }
 
-        nixl_mem_list_t getSupportedMems () const {
-            nixl_mem_list_t mems;
+        nixlMemList getSupportedMems () const {
+            nixlMemList mems;
             mems.push_back(FILE_SEG);
             mems.push_back(DRAM_SEG);
             return mems;
         }
 
-        nixl_status_t connect(const std::string &remote_agent)
+        nixlStatus connect(const std::string &remote_agent)
         {
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t disconnect(const std::string &remote_agent)
+        nixlStatus disconnect(const std::string &remote_agent)
         {
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t loadLocalMD (nixlBackendMD* input,
+        nixlStatus loadLocalMD (nixlBackendMD* input,
                                    nixlBackendMD* &output) {
             output = input;
 
             return NIXL_SUCCESS;
         }
 
-        nixl_status_t unloadMD (nixlBackendMD* input) {
+        nixlStatus unloadMD (nixlBackendMD* input) {
             return NIXL_SUCCESS;
         }
-        nixl_status_t registerMem(const nixlBlobDesc &mem,
-                                  const nixl_mem_t &nixl_mem,
+        nixlStatus registerMem(const nixlBlobDesc &mem,
+                                  const nixlMemType &nixl_mem,
                                   nixlBackendMD* &out);
-        nixl_status_t deregisterMem (nixlBackendMD *meta);
+        nixlStatus deregisterMem (nixlBackendMD *meta);
 
-        nixl_status_t prepXfer (const nixl_xfer_op_t &operation,
+        nixlStatus prepXfer (const nixlXferOp &operation,
                                 const nixl_meta_dlist_t &local,
                                 const nixl_meta_dlist_t &remote,
                                 const std::string &remote_agent,
                                 nixlBackendReqH* &handle,
                                 const nixl_opt_b_args_t* opt_args=nullptr) const;
 
-        nixl_status_t postXfer (const nixl_xfer_op_t &operation,
+        nixlStatus postXfer (const nixlXferOp &operation,
                                 const nixl_meta_dlist_t &local,
                                 const nixl_meta_dlist_t &remote,
                                 const std::string &remote_agent,
                                 nixlBackendReqH* &handle,
                                 const nixl_opt_b_args_t* opt_args=nullptr) const;
 
-        nixl_status_t checkXfer (nixlBackendReqH* handle) const;
-        nixl_status_t releaseReqH(nixlBackendReqH* handle) const;
+        nixlStatus checkXfer (nixlBackendReqH* handle) const;
+        nixlStatus releaseReqH(nixlBackendReqH* handle) const;
 };
 #endif

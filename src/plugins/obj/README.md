@@ -35,7 +35,7 @@ The Object Storage backend supports configuration through two mechanisms: backen
 
 ### Backend Parameters
 
-Backend parameters are passed as a key-value map (`nixl_b_params_t`) when creating the backend instance. The Object Storage backend supports AWS S3-compatible storage and accepts the following parameters:
+Backend parameters are passed as a key-value map (`nixlBParams`) when creating the backend instance. The Object Storage backend supports AWS S3-compatible storage and accepts the following parameters:
 
 | Parameter | Description | Default | Required |
 |-----------|-------------|---------|----------|
@@ -86,14 +86,14 @@ Configuration values are resolved in the following priority order (highest to lo
 #### Minimal Configuration (using IAM role)
 
 ```cpp
-nixl_b_params_t params = {{"bucket", "my-bucket"}};
+nixlBParams params = {{"bucket", "my-bucket"}};
 agent.createBackend("obj", params);
 ```
 
 #### Full Configuration with Explicit Credentials
 
 ```cpp
-nixl_b_params_t params = {
+nixlBParams params = {
     {"access_key", "AKIAIOSFODNN7EXAMPLE"},
     {"secret_key", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"},
     {"bucket", "inference-data"},
@@ -106,7 +106,7 @@ agent.createBackend("obj", params);
 #### Custom S3-Compatible Endpoint
 
 ```cpp
-nixl_b_params_t params = {
+nixlBParams params = {
     {"access_key", "minioadmin"},
     {"secret_key", "minioadmin"},
     {"bucket", "test-bucket"},
@@ -129,7 +129,7 @@ export AWS_REGION=us-west-2
 
 ```cpp
 // Minimal parameter map when using environment variables
-nixl_b_params_t params = {{"use_virtual_addressing", "true"}};
+nixlBParams params = {{"use_virtual_addressing", "true"}};
 agent.createBackend("obj", params);
 ```
 
@@ -140,7 +140,7 @@ export AWS_PROFILE=production
 ```
 
 ```cpp
-nixl_b_params_t params = {
+nixlBParams params = {
     {"bucket", "production-bucket"},
     {"region", "us-east-1"}
 };

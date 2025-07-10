@@ -29,7 +29,7 @@ const std::string AGENT2_NAME = "EtcdAgent2";
 const std::string PARTIAL_LABEL_1 = "conn_info_1";
 const std::string PARTIAL_LABEL_2 = "conn_info_2";
 
-void printStatus(const std::string& operation, nixl_status_t status) {
+void printStatus(const std::string& operation, nixlStatus status) {
     std::cout << operation << ": " << nixlEnumStrings::statusStr(status) << std::endl;
     if (status != NIXL_SUCCESS) {
         std::cerr << "Error: " << nixlEnumStrings::statusStr(status) << std::endl;
@@ -55,7 +55,7 @@ nixlAgent* createAgent(const std::string& name) {
     return agent;
 }
 
-void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
+void printParams(const nixlBParams& params, const nixlMemList& mems) {
     if (params.empty()) {
         std::cout << "Parameters: (empty)" << std::endl;
         return;
@@ -78,7 +78,7 @@ void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
 }
 
 // Register a memory buffer with the agent
-nixl_status_t registerMemory(void** addr, nixlAgent* agent, nixl_reg_dlist_t* dlist, nixl_opt_args_t* extra_params, nixlBackendH* backend, uint8_t pattern) {
+nixlStatus registerMemory(void** addr, nixlAgent* agent, nixlRegDlist* dlist, nixlAgentOptionalArgs* extra_params, nixlBackendH* backend, uint8_t pattern) {
     // Create an optional parameters structure
     extra_params->backends.push_back(backend);
 
@@ -98,7 +98,7 @@ nixl_status_t registerMemory(void** addr, nixlAgent* agent, nixl_reg_dlist_t* dl
     dlist->addDesc(desc);
 
     // Register the memory with the agent
-    nixl_status_t status = agent->registerMem(*dlist, extra_params);
+    nixlStatus status = agent->registerMem(*dlist, extra_params);
 
     std::cout << "Registered memory " << *addr << " with agent "
               << agent << std::endl;
@@ -109,16 +109,16 @@ nixl_status_t registerMemory(void** addr, nixlAgent* agent, nixl_reg_dlist_t* dl
 int main() {
     void* addr1 = nullptr;
     void* addr2 = nullptr;
-    nixl_status_t ret1, ret2;
-    nixl_status_t status;
+    nixlStatus ret1, ret2;
+    nixlStatus status;
 
     // Create two agents (normally these would be in separate processes or machines)
     nixlAgentConfig cfg(true);
-    nixl_b_params_t init1, init2;
-    nixl_mem_list_t mems1, mems2;
-    nixl_reg_dlist_t dlist1(DRAM_SEG), dlist2(DRAM_SEG), empty_dlist(DRAM_SEG);
+    nixlBParams init1, init2;
+    nixlMemList mems1, mems2;
+    nixlRegDlist dlist1(DRAM_SEG), dlist2(DRAM_SEG), empty_dlist(DRAM_SEG);
 
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
 
     std::cout << "NIXL Etcd Metadata Example\n";
     std::cout << "==========================\n";
@@ -127,14 +127,14 @@ int main() {
     nixlAgent A1(AGENT1_NAME, cfg);
     nixlAgent A2(AGENT2_NAME, cfg);
 
-    std::vector<nixl_backend_t> plugins;
+    std::vector<nixlBackend> plugins;
 
     ret1 = A1.getAvailPlugins(plugins);
     assert (ret1 == NIXL_SUCCESS);
 
     std::cout << "Available plugins:\n";
 
-    for (nixl_backend_t b: plugins)
+    for (nixlBackend b: plugins)
         std::cout << b << "\n";
 
     ret1 = A1.getPluginParams("UCX", mems1, init1);
@@ -205,14 +205,14 @@ int main() {
     std::cout << "Agent1's address: " << addr1 << std::endl;
     std::cout << "Agent2's address: " << addr2 << std::endl;
 
-    nixl_xfer_dlist_t req_src_descs (DRAM_SEG);
+    nixlXferDlist req_src_descs (DRAM_SEG);
     nixlBasicDesc req_src;
     req_src.addr     = (uintptr_t) (((char*) addr1) + 16); //random offset
     req_src.len      = req_size;
     req_src.devId    = 0;
     req_src_descs.addDesc(req_src);
 
-    nixl_xfer_dlist_t req_dst_descs (DRAM_SEG);
+    nixlXferDlist req_dst_descs (DRAM_SEG);
     nixlBasicDesc req_dst;
     req_dst.addr   = (uintptr_t) ((char*) addr2) + dst_offset; //random offset
     req_dst.len    = req_size;
@@ -234,7 +234,7 @@ int main() {
 
     std::cout << "Transfer was posted\n";
 
-    nixl_notifs_t notif_map;
+    nixlNotifs notif_map;
     int n_notifs = 0;
 
     while (status != NIXL_SUCCESS || n_notifs == 0) {
@@ -259,11 +259,11 @@ int main() {
     std::cout << "\n3. Sending partial metadata to etcd...\n";
 
     // Create empty descriptor lists
-    nixl_reg_dlist_t empty_dlist1(DRAM_SEG);
-    nixl_reg_dlist_t empty_dlist2(DRAM_SEG);
+    nixlRegDlist empty_dlist1(DRAM_SEG);
+    nixlRegDlist empty_dlist2(DRAM_SEG);
 
     // Create optional parameters with includeConnInfo set to true
-    nixl_opt_args_t conn_params1, conn_params2;
+    nixlAgentOptionalArgs conn_params1, conn_params2;
     conn_params1.includeConnInfo = true;
     conn_params1.backends.push_back(ucx1);
     conn_params1.metadataLabel = PARTIAL_LABEL_1;
@@ -288,7 +288,7 @@ int main() {
     status = A2.sendLocalPartialMD(empty_dlist2, &conn_params2);
     assert(status == NIXL_SUCCESS);
 
-    nixl_opt_args_t fetch_params;
+    nixlAgentOptionalArgs fetch_params;
     fetch_params.metadataLabel = PARTIAL_LABEL_1;
     status = A1.fetchRemoteMD(AGENT2_NAME, &fetch_params);
     assert(status == NIXL_SUCCESS);

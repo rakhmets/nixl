@@ -62,7 +62,7 @@ namespace {
     }
 }
 
-nixl_status_t UringQueue::init(int entries, const io_uring_params& params) {
+nixlStatus UringQueue::init(int entries, const io_uring_params& params) {
     // Initialize with basic setup - need a mutable copy since the API modifies the params
     io_uring_params mutable_params = params;
     if (io_uring_queue_init_params(entries, &uring, &mutable_params) < 0) {
@@ -75,7 +75,7 @@ nixl_status_t UringQueue::init(int entries, const io_uring_params& params) {
     return NIXL_SUCCESS;
 }
 
-UringQueue::UringQueue(int num_entries, const io_uring_params& params, nixl_xfer_op_t operation)
+UringQueue::UringQueue(int num_entries, const io_uring_params& params, nixlXferOp operation)
     : num_entries(num_entries)
     , num_completed(0)
     , prep_op(operation == NIXL_READ ?
@@ -93,7 +93,7 @@ UringQueue::~UringQueue() {
     io_uring_queue_exit(&uring);
 }
 
-nixl_status_t
+nixlStatus
 UringQueue::submit (const nixl_meta_dlist_t &local, const nixl_meta_dlist_t &remote) {
     for (auto [local_it, remote_it] = std::make_pair (local.begin(), remote.begin());
          local_it != local.end() && remote_it != remote.end();
@@ -124,7 +124,7 @@ UringQueue::submit (const nixl_meta_dlist_t &local, const nixl_meta_dlist_t &rem
     return NIXL_IN_PROG;
 }
 
-nixl_status_t UringQueue::checkCompleted() {
+nixlStatus UringQueue::checkCompleted() {
     if (num_completed == num_entries) {
         return NIXL_SUCCESS;
     }
@@ -153,6 +153,6 @@ nixl_status_t UringQueue::checkCompleted() {
     return (num_completed == num_entries) ? NIXL_SUCCESS : NIXL_IN_PROG;
 }
 
-nixl_status_t UringQueue::prepIO(int fd, void* buf, size_t len, off_t offset) {
+nixlStatus UringQueue::prepIO(int fd, void* buf, size_t len, off_t offset) {
     return NIXL_SUCCESS;
 }

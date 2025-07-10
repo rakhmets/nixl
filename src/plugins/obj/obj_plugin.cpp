@@ -48,16 +48,16 @@ get_plugin_version() {
     return "0.1.0";
 }
 
-[[nodiscard]] nixl_b_params_t
+[[nodiscard]] nixlBParams
 get_backend_options() {
-    nixl_b_params_t params;
+    nixlBParams params;
     params["access_key"] = "AWS access key ID (required)";
     params["secret_key"] = "AWS secret access key (required)";
     params["session_token"] = "AWS session token (optional)";
     return params;
 }
 
-[[nodiscard]] nixl_mem_list_t
+[[nodiscard]] nixlMemList
 get_backend_mems() {
     return {DRAM_SEG, OBJ_SEG};
 }

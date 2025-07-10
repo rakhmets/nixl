@@ -221,7 +221,7 @@ format_duration (nixlTime::us_t us) {
 
 int
 main (int argc, char *argv[]) {
-    nixl_status_t ret = NIXL_SUCCESS;
+    nixlStatus ret = NIXL_SUCCESS;
     void **vram_addr = NULL;
     void **dram_addr = NULL;
     std::string role;
@@ -355,14 +355,14 @@ main (int argc, char *argv[]) {
 
     // Initialize NIXL components
     nixlAgentConfig cfg (true);
-    nixl_b_params_t params;
+    nixlBParams params;
     nixlBlobDesc *vram_buf = use_vram ? new nixlBlobDesc[num_transfers] : NULL;
     nixlBlobDesc *dram_buf = use_dram ? new nixlBlobDesc[num_transfers] : NULL;
     nixlBlobDesc *ftrans = new nixlBlobDesc[num_transfers];
     nixlBackendH *gds_mt;
-    nixl_reg_dlist_t vram_for_gds_mt (VRAM_SEG);
-    nixl_reg_dlist_t dram_for_gds_mt (DRAM_SEG);
-    nixl_reg_dlist_t file_for_gds_mt (FILE_SEG);
+    nixlRegDlist vram_for_gds_mt (VRAM_SEG);
+    nixlRegDlist dram_for_gds_mt (DRAM_SEG);
+    nixlRegDlist file_for_gds_mt (FILE_SEG);
     std::string name;
 
     std::cout << "\n============================================================" << std::endl;
@@ -497,8 +497,8 @@ main (int argc, char *argv[]) {
     }
 
     // Prepare transfer lists
-    nixl_xfer_dlist_t file_for_gds_mt_list = file_for_gds_mt.trim();
-    nixl_xfer_dlist_t src_list = use_dram ? dram_for_gds_mt.trim() : vram_for_gds_mt.trim();
+    nixlXferDlist file_for_gds_mt_list = file_for_gds_mt.trim();
+    nixlXferDlist src_list = use_dram ? dram_for_gds_mt.trim() : vram_for_gds_mt.trim();
 
     using namespace nixlTime;
 
@@ -512,8 +512,8 @@ main (int argc, char *argv[]) {
         nixlXferReqH *write_req = nullptr;
 
         // Create descriptor lists for all transfers
-        nixl_reg_dlist_t src_reg (use_dram ? DRAM_SEG : VRAM_SEG);
-        nixl_reg_dlist_t file_reg (FILE_SEG);
+        nixlRegDlist src_reg (use_dram ? DRAM_SEG : VRAM_SEG);
+        nixlRegDlist file_reg (FILE_SEG);
 
         // Add all descriptors
         for (int transfer_idx = 0; transfer_idx < num_transfers; transfer_idx++) {
@@ -528,8 +528,8 @@ main (int argc, char *argv[]) {
         std::cout << "\nAll descriptors added." << std::endl;
 
         // Create transfer lists
-        nixl_xfer_dlist_t src_list = src_reg.trim();
-        nixl_xfer_dlist_t file_list = file_reg.trim();
+        nixlXferDlist src_list = src_reg.trim();
+        nixlXferDlist file_list = file_reg.trim();
 
         // Create single transfer request for all transfers
         ret = agent.createXferReq (NIXL_WRITE, src_list, file_list, "GDSMTTester", write_req);
@@ -612,8 +612,8 @@ main (int argc, char *argv[]) {
         nixlXferReqH *read_req = nullptr;
 
         // Create descriptor lists for all transfers
-        nixl_reg_dlist_t src_reg (use_dram ? DRAM_SEG : VRAM_SEG);
-        nixl_reg_dlist_t file_reg (FILE_SEG);
+        nixlRegDlist src_reg (use_dram ? DRAM_SEG : VRAM_SEG);
+        nixlRegDlist file_reg (FILE_SEG);
 
         // Add all descriptors
         for (int transfer_idx = 0; transfer_idx < num_transfers; transfer_idx++) {
@@ -628,8 +628,8 @@ main (int argc, char *argv[]) {
         std::cout << "\nAll descriptors added." << std::endl;
 
         // Create transfer lists
-        nixl_xfer_dlist_t src_list = src_reg.trim();
-        nixl_xfer_dlist_t file_list = file_reg.trim();
+        nixlXferDlist src_list = src_reg.trim();
+        nixlXferDlist file_list = file_reg.trim();
 
         // Create single transfer request for all transfers
         ret = agent.createXferReq (NIXL_READ, src_list, file_list, "GDSMTTester", read_req);

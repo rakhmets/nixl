@@ -36,7 +36,7 @@ class UringQueue : public nixlPosixQueue {
         io_uring_prep_func_t prep_op;  // Pointer to prep function
 
         // Initialize the queue with the given parameters
-        nixl_status_t init(int num_entries, const struct io_uring_params& params);
+        nixlStatus init(int num_entries, const struct io_uring_params& params);
 
         // Delete copy and move operations to prevent accidental copying of kernel resources
         UringQueue(const UringQueue&) = delete;
@@ -45,12 +45,12 @@ class UringQueue : public nixlPosixQueue {
         UringQueue& operator=(UringQueue&&) = delete;
 
     public:
-        UringQueue(int num_entries, const struct io_uring_params& params, nixl_xfer_op_t operation);
+        UringQueue(int num_entries, const struct io_uring_params& params, nixlXferOp operation);
         ~UringQueue();
-        nixl_status_t
+        nixlStatus
         submit (const nixl_meta_dlist_t &local, const nixl_meta_dlist_t &remote) override;
-        nixl_status_t checkCompleted() override;
-        nixl_status_t prepIO(int fd, void* buf, size_t len, off_t offset) override;
+        nixlStatus checkCompleted() override;
+        nixlStatus prepIO(int fd, void* buf, size_t len, off_t offset) override;
 };
 
 #endif // URING_QUEUE_H

@@ -43,11 +43,11 @@ namespace
        return ucx_plugin_version;
    }
 
-   [[nodiscard]] nixl_b_params_t get_backend_options() {
+   [[nodiscard]] nixlBParams get_backend_options() {
        return get_ucx_backend_common_options();
    }
 
-   [[nodiscard]] nixl_mem_list_t get_backend_mems() {
+   [[nodiscard]] nixlMemList get_backend_mems() {
        return {
 	 DRAM_SEG,
 	 VRAM_SEG

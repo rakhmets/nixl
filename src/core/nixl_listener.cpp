@@ -220,9 +220,9 @@ public:
     }
 
     // Store metadata in etcd
-    nixl_status_t storeMetadataInEtcd(const std::string& agent_name,
+    nixlStatus storeMetadataInEtcd(const std::string& agent_name,
                                       const std::string& metadata_type,
-                                      const nixl_blob_t& metadata) {
+                                      const nixlBlob& metadata) {
         if (!etcd) {
             NIXL_ERROR << "ETCD client not available";
             return NIXL_ERR_NOT_SUPPORTED;
@@ -247,7 +247,7 @@ public:
     }
 
     // Remove all agent's metadata from etcd
-    nixl_status_t removeMetadataFromEtcd(const std::string& agent_name) {
+    nixlStatus removeMetadataFromEtcd(const std::string& agent_name) {
         if (!etcd) {
             NIXL_ERROR << "ETCD client not available";
             return NIXL_ERR_NOT_SUPPORTED;
@@ -273,9 +273,9 @@ public:
     }
 
     // Fetch metadata from etcd
-    nixl_status_t fetchMetadataFromEtcd(const std::string& agent_name,
+    nixlStatus fetchMetadataFromEtcd(const std::string& agent_name,
                                         const std::string& metadata_type,
-                                        nixl_blob_t& metadata) {
+                                        nixlBlob& metadata) {
         if (!etcd) {
             NIXL_ERROR << "ETCD client not available";
             return NIXL_ERR_NOT_SUPPORTED;
@@ -300,14 +300,14 @@ public:
         }
     }
 
-    nixl_status_t waitForMetadataFromEtcd(const std::string& metadata_key,
-                                          nixl_blob_t& remote_metadata) {
+    nixlStatus waitForMetadataFromEtcd(const std::string& metadata_key,
+                                          nixlBlob& remote_metadata) {
         try {
 
             // Get current index to watch from
             etcd::Response response = etcd->get(metadata_key).get();
             int64_t watch_index = response.index();
-            std::promise<nixl_status_t> ret_prom;
+            std::promise<nixlStatus> ret_prom;
             auto future = ret_prom.get_future();
 
             // This lambda assumes lifetime only inside this method
@@ -345,10 +345,10 @@ public:
     }
 
     // Fetch metadata from etcd or wait for it to be available
-    nixl_status_t fetchOrWaitForMetadataFromEtcd(const std::string& remote_agent,
+    nixlStatus fetchOrWaitForMetadataFromEtcd(const std::string& remote_agent,
                                                  const std::string& metadata_label,
-                                                 nixl_blob_t& remote_metadata) {
-        nixl_status_t ret = fetchMetadataFromEtcd(remote_agent, metadata_label, remote_metadata);
+                                                 nixlBlob& remote_metadata) {
+        nixlStatus ret = fetchMetadataFromEtcd(remote_agent, metadata_label, remote_metadata);
         if (ret == NIXL_SUCCESS) {
             return NIXL_SUCCESS;
         }
@@ -404,7 +404,7 @@ public:
         for (const auto &agent : tmp_invalidated_agents) {
             NIXL_DEBUG << "Invalidated agent: " << agent;
             agentWatchers.erase(agent);
-            nixl_status_t ret = my_agent->invalidateRemoteMD(agent);
+            nixlStatus ret = my_agent->invalidateRemoteMD(agent);
             if (ret != NIXL_SUCCESS)
                 NIXL_ERROR << "Failed to invalidate remote metadata for agent: " << agent << ": " << ret;
             else
@@ -514,7 +514,7 @@ void nixlAgentData::commWorker(nixlAgent* myAgent){
                     const std::string &metadata_label = req_ip;
 
                     // Use local storeMetadataInEtcd function
-                    nixl_status_t ret = etcdClient->storeMetadataInEtcd(name, metadata_label, my_MD);
+                    nixlStatus ret = etcdClient->storeMetadataInEtcd(name, metadata_label, my_MD);
                     if (ret != NIXL_SUCCESS) {
                         NIXL_ERROR << "Failed to store metadata in etcd: " << ret;
                     }
@@ -530,8 +530,8 @@ void nixlAgentData::commWorker(nixlAgent* myAgent){
                     const std::string &remote_agent = my_MD;
 
                     // First try a direct get
-                    nixl_blob_t remote_metadata;
-                    nixl_status_t ret = etcdClient->fetchOrWaitForMetadataFromEtcd(remote_agent, metadata_label,
+                    nixlBlob remote_metadata;
+                    nixlStatus ret = etcdClient->fetchOrWaitForMetadataFromEtcd(remote_agent, metadata_label,
                                                                                    remote_metadata);
                     if (ret != NIXL_SUCCESS) {
                         NIXL_ERROR << "Failed to fetch metadata from etcd: " << ret;
@@ -559,7 +559,7 @@ void nixlAgentData::commWorker(nixlAgent* myAgent){
                         throw std::runtime_error("ETCD is not enabled");
                     }
 
-                    nixl_status_t ret = etcdClient->removeMetadataFromEtcd(name);
+                    nixlStatus ret = etcdClient->removeMetadataFromEtcd(name);
                     if (ret != NIXL_SUCCESS) {
                         NIXL_ERROR << "Failed to invalidate metadata in etcd: " << ret;
                     }
@@ -579,7 +579,7 @@ void nixlAgentData::commWorker(nixlAgent* myAgent){
         while (socket_iter != remoteSockets.end()) {
             std::string commands;
             std::vector<std::string> command_list;
-            nixl_status_t ret;
+            nixlStatus ret;
 
             if (!recvCommMessage(socket_iter->second, commands)) {
                 socket_iter++;
@@ -607,7 +607,7 @@ void nixlAgentData::commWorker(nixlAgent* myAgent){
                     }
                     // not sure what to do with remote_agent
                 } else if(header == "SEND") {
-                    nixl_blob_t my_MD;
+                    nixlBlob my_MD;
                     myAgent->getLocalMD(my_MD);
 
                     sendCommMessage(socket_iter->second, std::string("NIXLCOMM:LOAD" + my_MD));

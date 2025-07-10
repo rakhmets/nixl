@@ -42,7 +42,7 @@ bool equal_buf (void* buf1, void* buf2, size_t len) {
     return true;
 }
 
-void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
+void printParams(const nixlBParams& params, const nixlMemList& mems) {
     if (params.empty()) {
         std::cout << "Parameters: (empty)" << std::endl;
         return;
@@ -66,28 +66,28 @@ void printParams(const nixl_b_params_t& params, const nixl_mem_list_t& mems) {
 
 int main()
 {
-    nixl_status_t ret1, ret2;
+    nixlStatus ret1, ret2;
     std::string ret_s1, ret_s2;
 
     // Example: assuming two agents running on the same machine,
     // with separate memory regions in DRAM
 
     nixlAgentConfig cfg(true);
-    nixl_b_params_t init1, init2;
-    nixl_mem_list_t mems1, mems2;
+    nixlBParams init1, init2;
+    nixlMemList mems1, mems2;
 
     // populate required/desired inits
     nixlAgent A1(agent1, cfg);
     nixlAgent A2(agent2, cfg);
 
-    std::vector<nixl_backend_t> plugins;
+    std::vector<nixlBackend> plugins;
 
     ret1 = A1.getAvailPlugins(plugins);
     assert (ret1 == NIXL_SUCCESS);
 
     std::cout << "Available plugins:\n";
 
-    for (nixl_backend_t b: plugins)
+    for (nixlBackend b: plugins)
         std::cout << b << "\n";
 
     ret1 = A1.getPluginParams("UCX", mems1, init1);
@@ -104,7 +104,7 @@ int main()
     ret1 = A1.createBackend("UCX", init1, ucx1);
     ret2 = A2.createBackend("UCX", init2, ucx2);
 
-    nixl_opt_args_t extra_params1, extra_params2;
+    nixlAgentOptionalArgs extra_params1, extra_params2;
     extra_params1.backends.push_back(ucx1);
     extra_params2.backends.push_back(ucx2);
 
@@ -131,7 +131,7 @@ int main()
     // User allocates memories, and passes the corresponding address
     // and length to register with the backend
     nixlBlobDesc buff1, buff2, buff3;
-    nixl_reg_dlist_t dlist1(DRAM_SEG), dlist2(DRAM_SEG);
+    nixlRegDlist dlist1(DRAM_SEG), dlist2(DRAM_SEG);
     size_t len = 256;
     void* addr1 = calloc(1, len);
     void* addr2 = calloc(1, len);
@@ -178,14 +178,14 @@ int main()
     size_t req_size = 8;
     size_t dst_offset = 8;
 
-    nixl_xfer_dlist_t req_src_descs (DRAM_SEG);
+    nixlXferDlist req_src_descs (DRAM_SEG);
     nixlBasicDesc req_src;
     req_src.addr     = (uintptr_t) (((char*) addr1) + 16); //random offset
     req_src.len      = req_size;
     req_src.devId   = 0;
     req_src_descs.addDesc(req_src);
 
-    nixl_xfer_dlist_t req_dst_descs (DRAM_SEG);
+    nixlXferDlist req_dst_descs (DRAM_SEG);
     nixlBasicDesc req_dst;
     req_dst.addr   = (uintptr_t) ((char*) addr2) + dst_offset; //random offset
     req_dst.len    = req_size;
@@ -200,11 +200,11 @@ int main()
     ret1 = A1.createXferReq(NIXL_WRITE, req_src_descs, req_dst_descs, agent2, req_handle, &extra_params1);
     assert (ret1 == NIXL_SUCCESS);
 
-    nixl_status_t status = A1.postXferReq(req_handle);
+    nixlStatus status = A1.postXferReq(req_handle);
 
     std::cout << "Transfer was posted\n";
 
-    nixl_notifs_t notif_map;
+    nixlNotifs notif_map;
     int n_notifs = 0;
 
     while (status != NIXL_SUCCESS || n_notifs == 0) {

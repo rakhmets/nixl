@@ -31,9 +31,9 @@ std::string conn_info[2];
 void test_thread(int id)
 {
     nixlBackendInitParams init_params;
-    nixl_b_params_t       custom_params;
+    nixlBParams       custom_params;
     nixlBackendEngine*    ucx;
-    nixl_status_t         ret;
+    nixlStatus         ret;
 
     std::string my_name("Agent1");
     std::string other("Agent2");

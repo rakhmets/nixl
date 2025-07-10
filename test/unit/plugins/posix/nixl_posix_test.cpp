@@ -209,7 +209,7 @@ read_write_test (int num_transfers,
     nixlAgent agent ("POSIXReadWriteTester", nixlAgentConfig (true));
 
     // Set up backend parameters
-    nixl_b_params_t params;
+    nixlBParams params;
     if (use_uring) {
         // Explicitly request io_uring
         params["use_uring"] = "true";
@@ -239,7 +239,7 @@ read_write_test (int num_transfers,
 
     // Create POSIX backend first - before allocating any resources
     nixlBackendH* posix = nullptr;
-    nixl_status_t status = agent.createBackend("POSIX", params, posix);
+    nixlStatus status = agent.createBackend("POSIX", params, posix);
     if (status != NIXL_SUCCESS) {
         std::cerr << std::endl << line_str << std::endl;
         std::cerr << center_str("ERROR: Backend Creation Failed") << std::endl;
@@ -271,10 +271,10 @@ read_write_test (int num_transfers,
         mode_t file_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;  // rw-r--r--
 
         // Create descriptor lists
-        nixl_reg_dlist_t dram_for_posix(DRAM_SEG);
-        nixl_reg_dlist_t file_for_posix(FILE_SEG);
-        nixl_xfer_dlist_t dram_for_posix_xfer(DRAM_SEG);
-        nixl_xfer_dlist_t file_for_posix_xfer(FILE_SEG);
+        nixlRegDlist dram_for_posix(DRAM_SEG);
+        nixlRegDlist file_for_posix(FILE_SEG);
+        nixlXferDlist dram_for_posix_xfer(DRAM_SEG);
+        nixlXferDlist file_for_posix_xfer(FILE_SEG);
         std::unique_ptr<nixlBlobDesc[]> dram_buf(new nixlBlobDesc[num_transfers]);
         std::unique_ptr<nixlBlobDesc[]> ftrans(new nixlBlobDesc[num_transfers]);
         nixlXferReqH* treq = nullptr;
@@ -490,7 +490,7 @@ test_posix_repost (std::string test_files_dir_path_abs_path, bool use_uring) {
     constexpr int num_transfers = 16;
     constexpr size_t transfer_size = 128 * 1024; // 128KB
     // Set up backend parameters
-    nixl_b_params_t params;
+    nixlBParams params;
     if (use_uring) {
         // Explicitly request io_uring
         params["use_uring"] = "true";
@@ -513,13 +513,13 @@ test_posix_repost (std::string test_files_dir_path_abs_path, bool use_uring) {
 
     print_segment_title (phase_title ("Allocating and initializing buffers"));
     std::unique_ptr<nixlBlobDesc[]> dram_buf (new nixlBlobDesc[num_transfers]);
-    nixl_reg_dlist_t dram_for_posix (DRAM_SEG);
-    nixl_xfer_dlist_t dram_for_posix_xfer (DRAM_SEG);
+    nixlRegDlist dram_for_posix (DRAM_SEG);
+    nixlXferDlist dram_for_posix_xfer (DRAM_SEG);
 
     std::vector<tempFile> fd;
     fd.reserve (num_transfers);
-    nixl_reg_dlist_t file_for_posix (FILE_SEG);
-    nixl_xfer_dlist_t file_for_posix_xfer (FILE_SEG);
+    nixlRegDlist file_for_posix (FILE_SEG);
+    nixlXferDlist file_for_posix_xfer (FILE_SEG);
     std::unique_ptr<nixlBlobDesc[]> ftrans (new nixlBlobDesc[num_transfers]);
 
     int file_open_flags = O_RDWR | O_CREAT;
@@ -562,7 +562,7 @@ test_posix_repost (std::string test_files_dir_path_abs_path, bool use_uring) {
     print_segment_title (phase_title ("Registering memory with NIXL"));
 
     int i = 0;
-    nixl_status_t ret = agent.registerMem (dram_for_posix);
+    nixlStatus ret = agent.registerMem (dram_for_posix);
     if (ret != NIXL_SUCCESS) {
         std::cerr << "Failed to register DRAM memory with NIXL" << std::endl;
         return 1;
@@ -579,7 +579,7 @@ test_posix_repost (std::string test_files_dir_path_abs_path, bool use_uring) {
     print_segment_title (phase_title ("1st Memory to File Transfer"));
 
     nixlXferReqH *treq_write = nullptr;
-    nixl_status_t status = agent.createXferReq(
+    nixlStatus status = agent.createXferReq(
         NIXL_WRITE, dram_for_posix_xfer, file_for_posix_xfer, "POSIXRepostTester", treq_write);
     if (status != NIXL_SUCCESS) {
         std::cerr << "Failed to create write transfer request - status: "

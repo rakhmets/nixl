@@ -40,9 +40,9 @@ namespace backend_plugin {
         return "0.0.1";
     }
 
-    static nixl_b_params_t
+    static nixlBParams
     get_backend_options() {
-        return nixl_b_params_t();
+        return nixlBParams();
     }
 
     static nixlBackendPlugin plugin = {NIXL_PLUGIN_API_VERSION,

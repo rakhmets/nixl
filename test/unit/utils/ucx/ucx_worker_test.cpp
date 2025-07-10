@@ -56,7 +56,7 @@ static void nixlUcxRequestInit(void *request)
     req->initialized = 1;
 }
 
-void completeRequest(nixlUcxWorker w[2], std::string op, bool is_flush, nixl_status_t ret,  nixlUcxReq &req)
+void completeRequest(nixlUcxWorker w[2], std::string op, bool is_flush, nixlStatus ret,  nixlUcxReq &req)
 {
     assert( ret == NIXL_SUCCESS || ret == NIXL_IN_PROG);
     if (ret == NIXL_SUCCESS) {
@@ -91,14 +91,14 @@ int main()
                             nullptr,
                             false,
                             1,
-                            nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE},
+                            nixlThreadSync::NIXL_THREAD_SYNC_NONE},
                            {devs,
                             sizeof(requestData),
                             nixlUcxRequestInit,
                             nullptr,
                             false,
                             1,
-                            nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE}};
+                            nixlThreadSync::NIXL_THREAD_SYNC_NONE}};
 
     nixlUcxWorker w[2] = {
         nixlUcxWorker(c[0]),
@@ -110,20 +110,20 @@ int main()
     nixlUcxReq req;
     uint8_t *buffer[2];
     uint8_t *chk_buffer;
-    nixl_status_t ret;
+    nixlStatus ret;
     size_t buf_size = 128 * 1024 * 1024; /* Use large buffer to ensure non-inline transfer */
     size_t i;
-    nixl_mem_t nixl_mem_type;
+    nixlMemType nixlMemTypeype;
 
 #ifdef USE_VRAM
     checkCudaError(cudaSetDevice(gpu_id), "Failed to set device");
     checkCudaError(cudaMalloc(&buffer[0], buf_size), "Failed to allocate CUDA buffer 0");
     checkCudaError(cudaMalloc(&buffer[1], buf_size), "Failed to allocate CUDA buffer 1");
-    nixl_mem_type = VRAM_SEG;
+    nixlMemTypeype = VRAM_SEG;
 #else
     buffer[0] = (uint8_t*) calloc(1, buf_size);
     buffer[1] = (uint8_t*) calloc(1, buf_size);
-    nixl_mem_type = DRAM_SEG;
+    nixlMemTypeype = DRAM_SEG;
 #endif
     chk_buffer = (uint8_t*) calloc(1, buf_size);
 
@@ -136,7 +136,7 @@ int main()
         auto result = w[!i].connect((void*)addr.data(), addr.size());
         assert(result.ok());
         ep[!i] = std::move(*result);
-        assert(0 == c[i].memReg(buffer[i], buf_size, mem[i], nixl_mem_type));
+        assert(0 == c[i].memReg(buffer[i], buf_size, mem[i], nixlMemTypeype));
         std::string rkey_tmp = c[i].packRkey(mem[i]);
         assert(!rkey_tmp.empty());
         rkey[!i] = std::make_unique<nixl::ucx::rkey>(*ep[!i], rkey_tmp.data());

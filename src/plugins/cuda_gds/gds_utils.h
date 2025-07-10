@@ -42,12 +42,12 @@ class nixlGdsIOBatch {
         nixlGdsIOBatch(unsigned int size);
         ~nixlGdsIOBatch();
 
-        nixl_status_t addToBatch(CUfileHandle_t fh, void *buffer,
+        nixlStatus addToBatch(CUfileHandle_t fh, void *buffer,
                                 size_t size, size_t file_offset,
                                 size_t ptr_offset, CUfileOpcode_t type);
-        nixl_status_t submitBatch(int flags);
-        nixl_status_t checkStatus();
-        nixl_status_t cancelBatch();
+        nixlStatus submitBatch(int flags);
+        nixlStatus checkStatus();
+        nixlStatus cancelBatch();
         void reset();
 
     private:
@@ -58,20 +58,20 @@ class nixlGdsIOBatch {
         unsigned int max_reqs = 0;
         unsigned int batch_size = 0;
         unsigned int entries_completed = 0;
-        nixl_status_t current_status = NIXL_ERR_NOT_POSTED;
+        nixlStatus current_status = NIXL_ERR_NOT_POSTED;
 };
 
 class gdsUtil {
     public:
         gdsUtil() {}
         ~gdsUtil() {}
-        nixl_status_t registerFileHandle(int fd, size_t size,
+        nixlStatus registerFileHandle(int fd, size_t size,
                                        std::string metaInfo,
                                        gdsFileHandle& handle);
-        nixl_status_t registerBufHandle(void *ptr, size_t size, int flags);
+        nixlStatus registerBufHandle(void *ptr, size_t size, int flags);
         void deregisterFileHandle(gdsFileHandle& handle);
-        nixl_status_t deregisterBufHandle(void *ptr);
-        nixl_status_t openGdsDriver();
+        nixlStatus deregisterBufHandle(void *ptr);
+        nixlStatus openGdsDriver();
         void closeGdsDriver();
 };
 #endif

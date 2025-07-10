@@ -36,7 +36,7 @@ class nixlAgentConfig {
         /** @var Port for listener thread to use */
         int      listenPort;
         /** @var synchronization mode for multi-threaded environment execution */
-        nixl_thread_sync_t syncMode;
+        nixlThreadSync syncMode;
 
     public:
 
@@ -66,7 +66,7 @@ class nixlAgentConfig {
         nixlAgentConfig (const bool use_prog_thread,
                          const bool use_listen_thread=false,
                          const int port=0,
-                         nixl_thread_sync_t sync_mode=nixl_thread_sync_t::NIXL_THREAD_SYNC_DEFAULT,
+                         nixlThreadSync sync_mode=nixlThreadSync::NIXL_THREAD_SYNC_DEFAULT,
                          unsigned int num_workers = 1,
                          const uint64_t pthr_delay_us=0,
                          const uint64_t lthr_delay_us = 100000) :

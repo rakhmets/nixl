@@ -23,12 +23,12 @@
 
 class nixlLock {
     public:
-        nixlLock(const nixl_thread_sync_t sync_mode) {
+        nixlLock(const nixlThreadSync sync_mode) {
             switch (sync_mode) {
-            case nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE:
+            case nixlThreadSync::NIXL_THREAD_SYNC_NONE:
                 lock_cb = unlock_cb = lock_shared_cb = unlock_shared_cb = []() {};
                 break;
-            case nixl_thread_sync_t::NIXL_THREAD_SYNC_STRICT:
+            case nixlThreadSync::NIXL_THREAD_SYNC_STRICT:
                 lock_cb = lock_shared_cb = [this]() {
                     m.Lock();
                 };
@@ -36,7 +36,7 @@ class nixlLock {
                     m.Unlock();
                 };
                 break;
-            case nixl_thread_sync_t::NIXL_THREAD_SYNC_RW:
+            case nixlThreadSync::NIXL_THREAD_SYNC_RW:
                 lock_cb = [this]() {
                     m.Lock();
                 };

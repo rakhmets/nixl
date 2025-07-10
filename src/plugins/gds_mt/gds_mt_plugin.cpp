@@ -49,12 +49,12 @@ get_plugin_version() {
     return PLUGIN_VERSION;
 }
 
-static nixl_b_params_t
+static nixlBParams
 get_backend_options() {
     return {};
 }
 
-static nixl_mem_list_t
+static nixlMemList
 get_backend_mems() {
     return {DRAM_SEG, VRAM_SEG, FILE_SEG};
 }

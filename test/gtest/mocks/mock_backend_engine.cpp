@@ -24,40 +24,40 @@ MockBackendEngine::MockBackendEngine(const nixlBackendInitParams *init_params)
       gmock_backend_engine(GMockBackendEngine::GetFromParams(init_params->customParams)),
       sharedState(1) {}
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::registerMem(const nixlBlobDesc &mem,
-                               const nixl_mem_t &nixl_mem,
+                               const nixlMemType &nixl_mem,
                                nixlBackendMD *&out) {
     sharedState++;
     return gmock_backend_engine->registerMem(mem, nixl_mem, out);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::deregisterMem(nixlBackendMD *meta) {
     sharedState++;
     return gmock_backend_engine->deregisterMem(meta);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::connect(const std::string &remote_agent) {
     sharedState++;
     return gmock_backend_engine->connect(remote_agent);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::disconnect(const std::string &remote_agent) {
     sharedState++;
     return gmock_backend_engine->disconnect(remote_agent);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::unloadMD(nixlBackendMD *input) {
     sharedState++;
     return gmock_backend_engine->unloadMD(input);
 }
 
-nixl_status_t
-MockBackendEngine::prepXfer(const nixl_xfer_op_t &operation,
+nixlStatus
+MockBackendEngine::prepXfer(const nixlXferOp &operation,
                             const nixl_meta_dlist_t &local,
                             const nixl_meta_dlist_t &remote,
                             const std::string &remote_agent,
@@ -67,8 +67,8 @@ MockBackendEngine::prepXfer(const nixl_xfer_op_t &operation,
     return gmock_backend_engine->prepXfer(operation, local, remote, remote_agent, handle, opt_args);
 }
 
-nixl_status_t
-MockBackendEngine::postXfer(const nixl_xfer_op_t &operation,
+nixlStatus
+MockBackendEngine::postXfer(const nixlXferOp &operation,
                             const nixl_meta_dlist_t &local,
                             const nixl_meta_dlist_t &remote,
                             const std::string &remote_agent,
@@ -78,47 +78,47 @@ MockBackendEngine::postXfer(const nixl_xfer_op_t &operation,
     return gmock_backend_engine->postXfer(operation, local, remote, remote_agent, handle, opt_args);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::checkXfer(nixlBackendReqH *handle) const {
     assert(sharedState > 0);
     return gmock_backend_engine->checkXfer(handle);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::releaseReqH(nixlBackendReqH *handle) const {
     assert(sharedState > 0);
     return gmock_backend_engine->releaseReqH(handle);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::loadRemoteConnInfo(const std::string &remote_agent,
                                       const std::string &remote_conn_info) {
     sharedState++;
     return gmock_backend_engine->loadRemoteConnInfo(remote_agent, remote_conn_info);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::loadRemoteMD(const nixlBlobDesc &input,
-                                const nixl_mem_t &nixl_mem,
+                                const nixlMemType &nixl_mem,
                                 const std::string &remote_agent,
                                 nixlBackendMD *&output) {
     sharedState++;
     return gmock_backend_engine->loadRemoteMD(input, nixl_mem, remote_agent, output);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::loadLocalMD(nixlBackendMD *input, nixlBackendMD *&output) {
     sharedState++;
     return gmock_backend_engine->loadLocalMD(input, output);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::getNotifs(notif_list_t &notif_list) {
     sharedState++;
     return gmock_backend_engine->getNotifs(notif_list);
 }
 
-nixl_status_t
+nixlStatus
 MockBackendEngine::genNotif(const std::string &remote_agent, const std::string &msg) const {
     assert(sharedState > 0);
     return gmock_backend_engine->genNotif(remote_agent, msg);

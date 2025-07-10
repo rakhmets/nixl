@@ -86,7 +86,7 @@ public:
      * @param custom_params Custom parameters containing S3 configuration
      * @param executor Optional executor for async operations
      */
-    AwsS3Client(nixl_b_params_t *custom_params,
+    AwsS3Client(nixlBParams *custom_params,
                 std::shared_ptr<Aws::Utils::Threading::Executor> executor = nullptr);
 
     void
