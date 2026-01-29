@@ -35,17 +35,18 @@ extern "C" {
 namespace nixl::ucx {
 class memListElement {
 public:
+    template<typename T>
+    [[nodiscard]] static ucp_device_mem_list_elem_t
+    get(const T &desc, size_t worker_id) {
+        return memListElement(desc, worker_id).element_;
+    }
+
+private:
     memListElement(const nixlRemoteMetaDesc &desc, size_t worker_id)
         : element_(create(desc, worker_id)) {}
 
     memListElement(const nixlMetaDesc &desc, size_t) : element_(create(desc)) {}
 
-    [[nodiscard]] ucp_device_mem_list_elem_t
-    get() const noexcept {
-        return element_;
-    }
-
-private:
     [[nodiscard]] static ucp_device_mem_list_elem_t
     create(const nixlRemoteMetaDesc &, size_t);
 
@@ -58,6 +59,7 @@ private:
 class memListParams {
 public:
     explicit memListParams(const std::vector<ucp_device_mem_list_elem_t> &elements) noexcept;
+    memListParams(const std::vector<ucp_device_mem_list_elem_t> &&) = delete;
 
     void
     setWorker(const nixlUcxWorker &worker) noexcept;
@@ -133,7 +135,7 @@ createElements(const T &dlist, size_t worker_id = 0) {
     std::vector<ucp_device_mem_list_elem_t> elements;
     elements.reserve(desc_count);
     for (size_t i = 0; i < desc_count; ++i) {
-        elements.emplace_back(memListElement(dlist[i], worker_id).get());
+        elements.emplace_back(memListElement::get(dlist[i], worker_id));
     }
     return elements;
 }
