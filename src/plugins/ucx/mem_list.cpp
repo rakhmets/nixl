@@ -33,6 +33,8 @@ extern "C" {
 
 #ifdef HAVE_UCX_GPU_DEVICE_API_V2
 namespace nixl::ucx {
+using device_mem_vector_t = std::vector<ucp_device_mem_list_elem_t>;
+
 class memListElement {
 public:
     template<typename T>
@@ -58,8 +60,8 @@ private:
 
 class memListParams {
 public:
-    explicit memListParams(const std::vector<ucp_device_mem_list_elem_t> &elements) noexcept;
-    memListParams(const std::vector<ucp_device_mem_list_elem_t> &&) = delete;
+    explicit memListParams(const device_mem_vector_t &elements) noexcept;
+    memListParams(const device_mem_vector_t &&) = delete;
 
     void
     setWorker(const nixlUcxWorker &worker) noexcept;
@@ -113,7 +115,7 @@ memListElement::create(const nixlMetaDesc &desc) {
     return element;
 }
 
-memListParams::memListParams(const std::vector<ucp_device_mem_list_elem_t> &elements) noexcept {
+memListParams::memListParams(const device_mem_vector_t &elements) noexcept {
     params_.field_mask = UCP_DEVICE_MEM_LIST_PARAMS_FIELD_ELEMENTS |
         UCP_DEVICE_MEM_LIST_PARAMS_FIELD_ELEMENT_SIZE |
         UCP_DEVICE_MEM_LIST_PARAMS_FIELD_NUM_ELEMENTS;
@@ -129,20 +131,19 @@ memListParams::setWorker(const nixlUcxWorker &worker) noexcept {
 }
 
 template<typename T>
-[[nodiscard]] std::vector<ucp_device_mem_list_elem_t>
+[[nodiscard]] device_mem_vector_t
 createElements(const T &dlist, size_t worker_id = 0) {
-    const auto desc_count = static_cast<size_t>(dlist.descCount());
-    std::vector<ucp_device_mem_list_elem_t> elements;
-    elements.reserve(desc_count);
-    for (size_t i = 0; i < desc_count; ++i) {
-        elements.emplace_back(memListElement::get(dlist[i], worker_id));
+    device_mem_vector_t elements;
+    elements.reserve(dlist.descCount());
+    for (const auto &desc : dlist) {
+        elements.emplace_back(memListElement::get(desc, worker_id));
     }
     return elements;
 }
 
 void *
 createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWorker &worker) {
-    const auto elements = createElements(dlist, worker_id);
+    const device_mem_vector_t elements = createElements(dlist, worker_id);
     const memListParams params{elements};
 
     ucp_device_remote_mem_list_h handle{nullptr};
@@ -162,7 +163,7 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
 
 void *
 createMemList(const nixl_meta_dlist_t &dlist, const nixlUcxWorker &worker) {
-    const auto elements = createElements(dlist);
+    const device_mem_vector_t elements = createElements(dlist);
     memListParams params{elements};
     params.setWorker(worker);
 
