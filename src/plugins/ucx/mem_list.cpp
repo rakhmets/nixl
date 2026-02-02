@@ -25,8 +25,6 @@
 extern "C" {
 #include <ucp/api/device/ucp_host.h>
 }
-#else
-#include "common/nixl_log.h"
 #endif
 
 #include <stdexcept>
@@ -83,7 +81,7 @@ memListElement::create(const nixlRemoteMetaDesc &desc, size_t worker_id) {
         return element;
     }
 
-    auto md = static_cast<const nixlUcxPublicMetadata *>(desc.metadataP);
+    const auto md = static_cast<const nixlUcxPublicMetadata *>(desc.metadataP);
     if (!md) {
         throw std::runtime_error("No public metadata found in remote descriptor");
     }
@@ -102,7 +100,7 @@ memListElement::create(const nixlRemoteMetaDesc &desc, size_t worker_id) {
 
 ucp_device_mem_list_elem_t
 memListElement::create(const nixlMetaDesc &desc) {
-    auto md = static_cast<const nixlUcxPrivateMetadata *>(desc.metadataP);
+    const auto md = static_cast<const nixlUcxPrivateMetadata *>(desc.metadataP);
     if (!md) {
         throw std::runtime_error("No private metadata found in local descriptor");
     }
@@ -200,7 +198,7 @@ createMemList(const nixl_meta_dlist_t &, const nixlUcxWorker &) {
 
 void
 releaseMemList(void *) noexcept {
-    NIXL_WARN << error_message;
+    std::terminate();
 }
 } // namespace nixl::ucx
 #endif
