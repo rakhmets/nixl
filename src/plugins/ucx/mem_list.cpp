@@ -58,11 +58,9 @@ private:
 
 class memListParams {
 public:
-    explicit memListParams(const device_mem_vector_t &elements) noexcept;
-    memListParams(const device_mem_vector_t &&) = delete;
-
-    void
-    setWorker(const nixlUcxWorker &worker) noexcept;
+    explicit memListParams(const device_mem_vector_t &elements,
+                           const nixlUcxWorker *worker = nullptr) noexcept;
+    memListParams(const device_mem_vector_t &&, const nixlUcxWorker *worker = nullptr) = delete;
 
     [[nodiscard]] const ucp_device_mem_list_params_t *
     get() const noexcept {
@@ -113,19 +111,18 @@ memListElement::create(const nixlMetaDesc &desc) {
     return element;
 }
 
-memListParams::memListParams(const device_mem_vector_t &elements) noexcept {
+memListParams::memListParams(const device_mem_vector_t &elements,
+                             const nixlUcxWorker *worker) noexcept {
     params_.field_mask = UCP_DEVICE_MEM_LIST_PARAMS_FIELD_ELEMENTS |
         UCP_DEVICE_MEM_LIST_PARAMS_FIELD_ELEMENT_SIZE |
         UCP_DEVICE_MEM_LIST_PARAMS_FIELD_NUM_ELEMENTS;
     params_.elements = elements.data();
     params_.element_size = sizeof(ucp_device_mem_list_elem_t);
     params_.num_elements = elements.size();
-}
-
-void
-memListParams::setWorker(const nixlUcxWorker &worker) noexcept {
-    params_.field_mask |= UCP_DEVICE_MEM_LIST_PARAMS_FIELD_WORKER;
-    params_.worker = worker.get();
+    if (worker) {
+        params_.field_mask |= UCP_DEVICE_MEM_LIST_PARAMS_FIELD_WORKER;
+        params_.worker = worker->get();
+    }
 }
 
 template<typename T>
@@ -162,8 +159,7 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
 void *
 createMemList(const nixl_meta_dlist_t &dlist, const nixlUcxWorker &worker) {
     const device_mem_vector_t elements = createElements(dlist);
-    memListParams params{elements};
-    params.setWorker(worker);
+    const memListParams params{elements, &worker};
 
     ucp_device_local_mem_list_h handle{nullptr};
     const auto status = ucp_device_local_mem_list_create(params.get(), &handle);
