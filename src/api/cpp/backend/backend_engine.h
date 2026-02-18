@@ -156,19 +156,6 @@ class nixlBackendEngine {
         //Backend aborts the transfer if necessary, and destructs the relevant objects
         virtual nixl_status_t releaseReqH(nixlBackendReqH* handle) const = 0;
 
-        // Create a GPU transfer request to GPU memory for GPU transfer.
-        virtual nixl_status_t
-        createGpuXferReq(const nixlBackendReqH &req_hndl,
-                         const nixl_meta_dlist_t &local_descs,
-                         const nixl_meta_dlist_t &remote_descs,
-                         nixlGpuXferReqH &gpu_req_hndl) const {
-            return NIXL_ERR_NOT_SUPPORTED;
-        }
-
-        // Release a GPU transfer request from GPU memory
-        virtual void
-        releaseGpuXferReq(nixlGpuXferReqH gpu_req_hndl) const {}
-
         // Get the size required for a GPU signal
         virtual nixl_status_t
         getGpuSignalSize(size_t &signal_size) const {

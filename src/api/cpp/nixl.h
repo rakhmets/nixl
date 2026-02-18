@@ -321,28 +321,6 @@ class nixlAgent {
         releaseXferReq (nixlXferReqH* req_hndl) const;
 
         /**
-         * @brief  Create a GPU transfer request from a transfer request.
-         *
-         * @param  req_hndl     [in]  Transfer request obtained from makeXferReq/createXferReq
-         * @param  gpu_req_hndl [out] GPU transfer request handle
-         * @return nixl_status_t Error code if call was not successful
-         *
-         * @note   This call may block until the associated connection is established.
-         * @note   Requires progress thread to be enabled (enableProgTh=true) when creating the
-         *         backend.
-         */
-        nixl_status_t
-        createGpuXferReq(const nixlXferReqH &req_hndl, nixlGpuXferReqH &gpu_req_hndl) const;
-
-        /**
-         * @brief  Release transfer request from GPU memory
-         *
-         * @param  gpu_req_hndl  [in] GPU transfer request handle to be released
-         */
-        void
-        releaseGpuXferReq(nixlGpuXferReqH gpu_req_hndl) const;
-
-        /**
          * @brief  Get the size required for a GPU signal.
          *
          * This function returns the size required for allocating memory for a GPU signal.
@@ -415,7 +393,7 @@ class nixlAgent {
          * @return nixl_status_t Error code if call was not successful
          */
         nixl_status_t
-        prepMemView(const nixl_xfer_dlist_t &dlist,
+        prepMemView(const nixl_local_dlist_t &dlist,
                     nixlMemViewH &mvh,
                     const nixl_opt_args_t *extra_params = nullptr) const;
 
