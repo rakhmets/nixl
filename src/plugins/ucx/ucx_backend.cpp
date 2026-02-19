@@ -1367,39 +1367,6 @@ nixl_status_t nixlUcxEngine::releaseReqH(nixlBackendReqH* handle) const
     return status;
 }
 
-nixl_status_t
-nixlUcxEngine::getGpuSignalSize(size_t &signal_size) const {
-    if (gpuSignalSize_) {
-        signal_size = *gpuSignalSize_;
-        return NIXL_SUCCESS;
-    }
-
-    try {
-        gpuSignalSize_ = signal_size = uc->getGpuSignalSize();
-        return NIXL_SUCCESS;
-    }
-    catch (const std::exception &e) {
-        NIXL_ERROR << e.what();
-        return NIXL_ERR_BACKEND;
-    }
-}
-
-nixl_status_t
-nixlUcxEngine::prepGpuSignal(const nixlBackendMD &meta,
-                             void *signal,
-                             const nixl_opt_b_args_t *opt_args) const {
-    try {
-        auto ucx_meta = static_cast<const nixlUcxPrivateMetadata *>(&meta);
-        const auto worker_id = getWorkerId(opt_args);
-        getWorker(worker_id)->prepGpuSignal(ucx_meta->mem, signal);
-        return NIXL_SUCCESS;
-    }
-    catch (const std::exception &e) {
-        NIXL_ERROR << e.what();
-        return NIXL_ERR_BACKEND;
-    }
-}
-
 int nixlUcxEngine::progress() {
     // TODO: add listen for connection handling if necessary
     int ret = 0;
