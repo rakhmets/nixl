@@ -37,10 +37,12 @@ extern "C" {
 #include <stdexcept>
 
 #ifdef HAVE_UCX_GPU_DEVICE_API
+namespace {
+constexpr std::string_view error_message{"Failed to create device memory list"};
+}
+
 namespace nixl::ucx {
 using device_mem_vector_t = std::vector<ucp_device_mem_list_elem_t>;
-
-constexpr std::string_view error_message{"Failed to create device memory list"};
 
 class memListElement {
 public:
@@ -161,8 +163,8 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
     while ((status = ucp_device_remote_mem_list_create(params.get(), &handle)) ==
            UCS_ERR_NOT_CONNECTED) {
         if (check_timeout && ((std::chrono::steady_clock::now() - start) > timeout)) {
-            NIXL_WARN << "Timeout (" << timeout.count()
-                      << " ms) on creating device memory list has been exceeded";
+            NIXL_WARN << "Still waiting to create device memory list after " << timeout.count()
+                      << " ms; retrying";
             check_timeout = false;
         }
 
