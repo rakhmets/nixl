@@ -32,13 +32,12 @@ extern "C" {
 #else
 #include <exception>
 #endif
-#include <string>
-#include <string_view>
 #include <stdexcept>
+#include <string>
 
 #ifdef HAVE_UCX_GPU_DEVICE_API
 namespace {
-constexpr std::string_view error_message{"Failed to create device memory list"};
+const std::string error_message{"Failed to create device memory list"};
 }
 
 namespace nixl::ucx {
@@ -156,7 +155,7 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
 
     ucp_device_remote_mem_list_h handle{nullptr};
     ucs_status_t status;
-    bool check_timeout{true};
+    bool check_timeout = true;
     const auto timeout = nixl::config::getValueDefaulted("NIXL_UCX_TIMEOUT_WARNING", 5'000ms);
 
     const auto start = std::chrono::steady_clock::now();
@@ -174,8 +173,7 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
     }
 
     if (status != UCS_OK) {
-        throw std::runtime_error(std::string{error_message} +
-                                 "(remote): " + ucs_status_string(status));
+        throw std::runtime_error(error_message + "(remote): " + ucs_status_string(status));
     }
 
     return handle;
@@ -189,8 +187,7 @@ createMemList(const nixl_meta_dlist_t &dlist, const nixlUcxWorker &worker) {
     ucp_device_local_mem_list_h handle{nullptr};
     const auto status = ucp_device_local_mem_list_create(params.get(), &handle);
     if (status != UCS_OK) {
-        throw std::runtime_error(std::string{error_message} +
-                                 "(local): " + ucs_status_string(status));
+        throw std::runtime_error(error_message + "(local): " + ucs_status_string(status));
     }
 
     return handle;
@@ -203,18 +200,18 @@ releaseMemList(void *mvh) noexcept {
 } // namespace nixl::ucx
 #else
 namespace {
-constexpr std::string_view error_message{"UCX GPU device API is not supported"};
+const std::string error_message{"UCX GPU device API is not supported"};
 }
 
 namespace nixl::ucx {
 void *
 createMemList(const nixl_remote_meta_dlist_t &, size_t, nixlUcxWorker &) {
-    throw std::runtime_error(std::string{error_message});
+    throw std::runtime_error(error_message);
 }
 
 void *
 createMemList(const nixl_meta_dlist_t &, const nixlUcxWorker &) {
-    throw std::runtime_error(std::string{error_message});
+    throw std::runtime_error(error_message);
 }
 
 void
