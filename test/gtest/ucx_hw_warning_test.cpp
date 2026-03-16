@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "common.h"
+#include "context.h"
 #include "ucx_utils.h"
 #include "common/hw_info.h"
 

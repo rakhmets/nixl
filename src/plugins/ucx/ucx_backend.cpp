@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "context.h"
 #include "ucx_backend.h"
 #include "common/nixl_log.h"
 #include "serdes/serdes.h"

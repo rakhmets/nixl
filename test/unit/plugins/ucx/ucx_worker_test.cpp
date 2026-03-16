@@ -20,6 +20,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "context.h"
 #include "ucx_utils.h"
 #include "rkey.h"
 // TODO: meson conditional build for CUDA
@@ -78,8 +79,8 @@ main() {
     // TODO: pass dev name for testing
     // in CI it would be goot to test both SHM and IB
     // devs.push_back("mlx5_0");
-    nixlUcxContext c[2] = {{devs, false, 1, nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE, 1},
-                           {devs, false, 1, nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE, 1}};
+    nixl::ucx::context c[2] = {{devs, false, 1, nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE, 1},
+                               {devs, false, 1, nixl_thread_sync_t::NIXL_THREAD_SYNC_NONE, 1}};
 
     nixlUcxWorker w[2] = {nixlUcxWorker(c[0]), nixlUcxWorker(c[1])};
     std::unique_ptr<nixlUcxEp> ep[2];

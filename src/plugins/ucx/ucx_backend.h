@@ -98,6 +98,8 @@ private:
     std::vector<std::unique_ptr<nixl::ucx::rkey>> rkeys_;
 };
 
+//class nixlUcxContext;
+
 class nixlUcxEngine : public nixlBackendEngine {
 public:
     static std::unique_ptr<nixlUcxEngine>
@@ -292,7 +294,7 @@ private:
     getWorkerIdFromOptArgs(const nixl_opt_b_args_t &opt_args) const noexcept;
 
     /* UCX data */
-    std::unique_ptr<nixlUcxContext> uc;
+    std::unique_ptr<nixl::ucx::context> uc;
     std::vector<std::unique_ptr<nixlUcxWorker>> uws;
     std::string workerAddr;
     mutable std::atomic<size_t> sharedWorkerIndex_;

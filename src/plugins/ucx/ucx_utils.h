@@ -168,6 +168,10 @@ public:
     }
 };
 
+namespace nixl::ucx {
+class context;
+}
+
 class nixlUcxMem {
 private:
     void *base;
@@ -191,46 +195,8 @@ public:
     }
 
     friend class nixlUcxWorker;
-    friend class nixlUcxContext;
+    friend class nixl::ucx::context;
     friend class nixlUcxEp;
-};
-
-class nixlUcxContext {
-private:
-    /* Local UCX stuff */
-    ucp_context_h ctx;
-    const nixl_ucx_mt_t mtType_;
-    const unsigned ucpVersion_;
-
-public:
-    nixlUcxContext(const std::vector<std::string> &devs,
-                   bool prog_thread,
-                   unsigned long num_workers,
-                   nixl_thread_sync_t sync_mode,
-                   size_t num_device_channels,
-                   const std::string &engine_conf = "");
-    ~nixlUcxContext();
-
-    nixlUcxContext(nixlUcxContext &&) = delete;
-    nixlUcxContext(const nixlUcxContext &) = delete;
-
-    void
-    operator=(nixlUcxContext &&) = delete;
-    void
-    operator=(const nixlUcxContext &) = delete;
-
-    /* Memory management */
-    int
-    memReg(void *addr, size_t size, nixlUcxMem &mem, nixl_mem_t nixl_mem_type);
-    [[nodiscard]] std::string
-    packRkey(nixlUcxMem &mem);
-    void
-    memDereg(nixlUcxMem &mem);
-
-    void
-    warnAboutHardwareSupportMismatch() const;
-
-    friend class nixlUcxWorker;
 };
 
 [[nodiscard]] bool
@@ -239,7 +205,7 @@ nixlUcxMtLevelIsSupported(const nixl_ucx_mt_t) noexcept;
 class nixlUcxWorker {
 public:
     explicit nixlUcxWorker(
-        const nixlUcxContext &,
+        const nixl::ucx::context &,
         ucp_err_handling_mode_t ucp_err_handling_mode = UCP_ERR_HANDLING_MODE_NONE);
 
     nixlUcxWorker(nixlUcxWorker &&) = delete;
@@ -287,7 +253,7 @@ public:
 
 private:
     [[nodiscard]] static ucp_worker *
-    createUcpWorker(const nixlUcxContext &);
+    createUcpWorker(const nixl::ucx::context &);
 
     const std::unique_ptr<ucp_worker, void (*)(ucp_worker *)> worker;
     ucp_err_handling_mode_t err_handling_mode_;
