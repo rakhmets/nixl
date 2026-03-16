@@ -155,16 +155,15 @@ createMemList(const nixl_remote_meta_dlist_t &dlist, size_t worker_id, nixlUcxWo
 
     ucp_device_remote_mem_list_h handle{nullptr};
     ucs_status_t status;
-    bool check_timeout = true;
-    const auto timeout = nixl::config::getValueDefaulted("NIXL_UCX_TIMEOUT_WARNING", 5'000ms);
+    auto timeout_warning = nixl::config::getValueDefaulted("NIXL_UCX_TIMEOUT_WARNING", 5'000ms);
 
     const auto start = std::chrono::steady_clock::now();
     while ((status = ucp_device_remote_mem_list_create(params.get(), &handle)) ==
            UCS_ERR_NOT_CONNECTED) {
-        if (check_timeout && ((std::chrono::steady_clock::now() - start) > timeout)) {
-            NIXL_WARN << "Still waiting to create device memory list after " << timeout.count()
+        if ((std::chrono::steady_clock::now() - start) > timeout_warning) {
+            NIXL_WARN << "Still waiting to create device memory list after " << timeout_warning.count()
                       << " ms; retrying";
-            check_timeout = false;
+            timeout_warning += timeout_warning;
         }
 
         if (worker.progress() == 0) {
