@@ -33,6 +33,7 @@
 #include "backend/backend_engine.h"
 
 // Local includes
+#include "connection.h"
 #include "common/nixl_time.h"
 #include "mem_list.h"
 #include "rkey.h"
@@ -40,20 +41,7 @@
 
 enum ucx_cb_op_t { NOTIF_STR };
 
-class nixlUcxConnection : public nixlBackendConnMD {
-    private:
-        std::string remoteAgent;
-        std::vector<std::unique_ptr<nixlUcxEp>> eps;
-
-    public:
-        [[nodiscard]] const std::unique_ptr<nixlUcxEp>& getEp(size_t ep_id) const noexcept {
-            return eps[ep_id];
-        }
-
-    friend class nixlUcxEngine;
-};
-
-using ucx_connection_ptr_t = std::shared_ptr<nixlUcxConnection>;
+using ucx_connection_ptr_t = std::shared_ptr<nixl::ucx::connection>;
 
 // A private metadata has to implement get, and has all the metadata
 class nixlUcxPrivateMetadata : public nixlBackendMD {
@@ -263,7 +251,7 @@ private:
     nixl_status_t
     notifSendPriv(const std::string &remote_agent,
                   const std::string &msg,
-                  const std::unique_ptr<nixlUcxEp> &ep,
+                  const nixlUcxEp &ep,
                   nixlUcxReq *req = nullptr) const;
 
     ucx_connection_ptr_t
@@ -276,7 +264,7 @@ private:
     };
 
     static batchResult
-    sendXferRangeBatch(nixlUcxEp &ep,
+    sendXferRangeBatch(const nixlUcxEp &ep,
                        nixl_xfer_op_t operation,
                        const nixl_meta_dlist_t &local,
                        const nixl_meta_dlist_t &remote,

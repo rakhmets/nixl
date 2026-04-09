@@ -66,7 +66,7 @@ private:
     checkConnection(nixl_status_t status = NIXL_SUCCESS) const {
         NIXL_ASSERT(!connections_.empty());
         for (const auto &conn : connections_) {
-            nixl_status_t conn_status = conn->getEp(worker_id)->checkTxState();
+            const nixl_status_t conn_status = conn->getEp(worker_id).checkTxState();
             if (conn_status != NIXL_SUCCESS) {
                 return conn_status;
             }
@@ -931,22 +931,16 @@ nixl_status_t nixlUcxEngine::loadRemoteConnInfo (const std::string &remote_agent
     }
 
     nixlSerDes::_stringToBytes(addr.data(), remote_conn_info, size);
-    std::shared_ptr<nixlUcxConnection> conn = std::make_shared<nixlUcxConnection>();
-    bool error = false;
+    std::vector<std::unique_ptr<nixlUcxEp>> eps;
     for (auto &uw: uws) {
         auto result = uw->connect(addr.data(), size);
         if (!result.ok()) {
-            error = true;
-            break;
+            return NIXL_ERR_BACKEND;
         }
-        conn->eps.push_back(std::move(*result));
+        eps.push_back(std::move(*result));
     }
 
-    if (error)
-        return NIXL_ERR_BACKEND;
-
-    conn->remoteAgent = remote_agent;
-
+    auto conn = std::make_shared<nixl::ucx::connection>(std::move(eps));
     remoteConnMap.insert({remote_agent, conn});
 
     return NIXL_SUCCESS;
@@ -1012,7 +1006,7 @@ nixlUcxEngine::internalMDHelper (const nixl_blob_t &blob,
         nixlSerDes::_stringToBytes(addr.data(), blob, size);
 
         for (size_t wid = 0; wid < uws.size(); wid++) {
-            md->addRkey(*md->conn->getEp(wid), addr.data());
+            md->addRkey(md->conn->getEp(wid), addr.data());
         }
 
         output = (nixlBackendMD *)md.release();
@@ -1161,7 +1155,7 @@ nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
         std::chrono::microseconds msg_duration;
         std::chrono::microseconds msg_err_margin;
         nixl_cost_t msg_method;
-        nixl_status_t ret = rmd->conn->getEp(workerId)->estimateCost(lsize, msg_duration, msg_err_margin, msg_method);
+        const nixl_status_t ret = rmd->conn->getEp(workerId).estimateCost(lsize, msg_duration, msg_err_margin, msg_method);
         if (ret != NIXL_SUCCESS) {
             NIXL_ERROR << "Worker failed to estimate cost for segment " << i << " status: " << ret;
             return ret;
@@ -1176,7 +1170,7 @@ nixl_status_t nixlUcxEngine::estimateXferCost (const nixl_xfer_op_t &operation,
 }
 
 nixlUcxEngine::batchResult
-nixlUcxEngine::sendXferRangeBatch(nixlUcxEp &ep,
+nixlUcxEngine::sendXferRangeBatch(const nixlUcxEp &ep,
                                   nixl_xfer_op_t operation,
                                   const nixl_meta_dlist_t &local,
                                   const nixl_meta_dlist_t &remote,
@@ -1193,8 +1187,8 @@ nixlUcxEngine::sendXferRangeBatch(nixlUcxEp &ep,
 
         auto lmd = static_cast<nixlUcxPrivateMetadata *>(local[i].metadataP);
         auto rmd = static_cast<nixlUcxPublicMetadata *>(remote[i].metadataP);
-        auto &rmd_ep = rmd->conn->getEp(worker_id);
-        if (__builtin_expect(rmd_ep.get() != &ep, 0)) {
+        auto& rmd_ep = rmd->conn->getEp(worker_id);
+        if (__builtin_expect(&rmd_ep != &ep, 0)) {
             break;
         }
 
@@ -1249,7 +1243,7 @@ nixlUcxEngine::sendXferRange(const nixl_xfer_op_t &operation,
         /* Send requests to a single EP */
         auto rmd = static_cast<nixlUcxPublicMetadata *>(remote[i].metadataP);
         auto &ep = rmd->conn->getEp(workerId);
-        auto result = sendXferRangeBatch(*ep, operation, local, remote, workerId, i, end_idx);
+        auto result = sendXferRangeBatch(ep, operation, local, remote, workerId, i, end_idx);
 
         /* Append a single pending request for the entire EP batch */
         ret = intHandle->append(result.status, result.req, rmd->conn);
@@ -1268,7 +1262,7 @@ nixlUcxEngine::sendXferRange(const nixl_xfer_op_t &operation,
      */
     for (auto &conn : intHandle->getConnections()) {
         nixlUcxReq req;
-        ret = conn->getEp(workerId)->flushEp(req);
+        ret = conn->getEp(workerId).flushEp(req);
         if (intHandle->append(ret, req, conn) != NIXL_SUCCESS) {
             return ret;
         }
@@ -1383,7 +1377,7 @@ int nixlUcxEngine::progress() {
 nixl_status_t
 nixlUcxEngine::notifSendPriv(const std::string &remote_agent,
                              const std::string &msg,
-                             const std::unique_ptr<nixlUcxEp> &ep,
+                             const nixlUcxEp &ep,
                              nixlUcxReq *req) const {
     nixlSerDes ser_des;
 
@@ -1400,14 +1394,14 @@ nixlUcxEngine::notifSendPriv(const std::string &remote_agent,
         }
     };
 
-    return ep->sendAm(NOTIF_STR,
-                      nullptr,
-                      0,
-                      (void *)buffer->data(),
-                      buffer->size(),
-                      UCP_AM_SEND_FLAG_EAGER,
-                      req,
-                      deleter);
+    return ep.sendAm(NOTIF_STR,
+                     nullptr,
+                     0,
+                     (void *)buffer->data(),
+                     buffer->size(),
+                     UCP_AM_SEND_FLAG_EAGER,
+                     req,
+                     deleter);
 }
 
 ucx_connection_ptr_t

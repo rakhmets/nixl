@@ -137,7 +137,7 @@ public:
            size_t len,
            uint32_t flags,
            nixlUcxReq *req = nullptr,
-           const am_deleter_t &deleter = nullptr);
+           const am_deleter_t &deleter = nullptr) const;
 
     /* Data access */
     [[nodiscard]] nixl_status_t
@@ -146,21 +146,21 @@ public:
          void *laddr,
          nixlUcxMem &mem,
          size_t size,
-         nixlUcxReq &req);
+         nixlUcxReq &req) const;
     [[nodiscard]] nixl_status_t
     write(void *laddr,
           nixlUcxMem &mem,
           uint64_t raddr,
           const nixl::ucx::rkey &rkey,
           size_t size,
-          nixlUcxReq &req);
+          nixlUcxReq &req) const;
     nixl_status_t
     estimateCost(size_t size,
                  std::chrono::microseconds &duration,
                  std::chrono::microseconds &err_margin,
-                 nixl_cost_t &method);
+                 nixl_cost_t &method) const;
     nixl_status_t
-    flushEp(nixlUcxReq &req);
+    flushEp(nixlUcxReq &req) const;
 
     [[nodiscard]] ucp_ep_h
     getEp() const noexcept {
