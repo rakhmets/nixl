@@ -73,7 +73,7 @@ Buffer::Buffer(int rank, bool explicitly_destroy, bool low_latency_mode, int tim
         }()),
         rank(rank),
         explicitly_destroy(explicitly_destroy),
-        comm_stream(at::cuda::getStreamFromPool(true)) {}
+        comm_stream(cuda_stream::get_from_pool()) {}
 
 bool Buffer::_is_rank_connected(int rank_id) const {
     return rank_id == rank or std::find(remote_ranks.begin(), remote_ranks.end(), rank_id) != remote_ranks.end();
@@ -270,10 +270,6 @@ torch::Tensor Buffer::get_local_buffer_tensor(const pybind11::object& dtype, int
     auto base_ptr = static_cast<uint8_t*>(use_rdma_buffer ? rdma_buffer_ptr : buffer_ptrs[nvl_rank]) + offset;
     auto num_bytes = use_rdma_buffer ? num_rdma_bytes : num_nvl_bytes;
     return torch::from_blob(base_ptr, num_bytes / element_bytes, torch::TensorOptions().dtype(casted_dtype).device(at::kCUDA));
-}
-
-torch::Stream Buffer::get_comm_stream() const {
-    return comm_stream;
 }
 
 void Buffer::destroy() {
@@ -550,7 +546,7 @@ Buffer::get_dispatch_layout(const torch::Tensor& topk_idx, int num_experts,
 
     // Allocate all tensors on comm stream if set
     // NOTES: do not allocate tensors upfront!
-    auto compute_stream = at::cuda::getCurrentCUDAStream();
+    cudaStream_t compute_stream = cuda_stream::get_current();
     if (allocate_on_comm_stream) {
         EP_HOST_ASSERT(previous_event.has_value() and async);
         cuda_stream::set_current(comm_stream);
@@ -706,7 +702,7 @@ Buffer::ht_dispatch(const torch::Tensor& x, const std::optional<torch::Tensor>& 
 
     // Allocate all tensors on comm stream if set
     // NOTES: do not allocate tensors upfront!
-    auto compute_stream = at::cuda::getCurrentCUDAStream();
+    auto compute_stream = cuda_stream::get_current();
     if (allocate_on_comm_stream) {
         EP_HOST_ASSERT(previous_event.has_value() and async);
         cuda_stream::set_current(comm_stream);
@@ -926,7 +922,7 @@ Buffer::ht_combine(const torch::Tensor& x, const std::optional<torch::Tensor>& t
 
     // Allocate all tensors on comm stream if set
     // NOTES: do not allocate tensors upfront!
-    auto compute_stream = at::cuda::getCurrentCUDAStream();
+    auto compute_stream = cuda_stream::get_current();
     if (allocate_on_comm_stream) {
         EP_HOST_ASSERT(previous_event.has_value() and async);
         cuda_stream::set_current(comm_stream);
@@ -1064,7 +1060,7 @@ Buffer::dispatch(const torch::Tensor& x, const torch::Tensor& topk_idx,
     // Wait previous tasks to be finished
     // NOTES: the hook mode will always use the default stream
     cudaStream_t compute_stream = cuda_stream::get_current();
-    cudaStream_t launch_stream = return_recv_hook ? compute_stream : comm_stream.stream();
+    cudaStream_t launch_stream = return_recv_hook ? compute_stream : comm_stream;
     EP_HOST_ASSERT(not (async and return_recv_hook));
     if (not return_recv_hook)
         stream_wait(launch_stream, compute_stream);
@@ -1540,7 +1536,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         .def("get_local_device_id", &nixl_ep::Buffer::get_local_device_id)
         .def("get_local_ipc_handle", &nixl_ep::Buffer::get_local_ipc_handle)
         .def("get_local_buffer_tensor", &nixl_ep::Buffer::get_local_buffer_tensor)
-        .def("get_comm_stream", &nixl_ep::Buffer::get_comm_stream)
         .def("destroy", &nixl_ep::Buffer::destroy)
         .def("get_dispatch_layout", &nixl_ep::Buffer::get_dispatch_layout)
         .def("dispatch", &nixl_ep::Buffer::dispatch)

@@ -136,7 +136,7 @@ private:
     cudaIpcMemHandle_t ipc_handles[NUM_MAX_NVL_PEERS];
 
     // Stream for communication
-    at::cuda::CUDAStream comm_stream;
+    cudaStream_t comm_stream;
 
     // After synchronization, this flag will be true
     bool available = false;
@@ -223,9 +223,6 @@ public:
     pybind11::bytearray get_local_ipc_handle() const;
 
     torch::Tensor get_local_buffer_tensor(const pybind11::object& dtype, int64_t offset, bool use_rdma_buffer = false) const;
-
-    torch::Stream get_comm_stream() const;
-
 
     void destroy();
 
