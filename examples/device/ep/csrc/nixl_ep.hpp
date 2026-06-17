@@ -37,7 +37,7 @@
 
 #include <cuda_runtime.h>
 
-#include <torch/types.h>
+#include <torch/csrc/stable/tensor.h>
 
 #include <pybind11/pytypes.h>
 
@@ -47,8 +47,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <torch/csrc/stable/tensor.h>
 
 #ifndef TORCH_EXTENSION_NAME
 #define TORCH_EXTENSION_NAME nixl_ep_cpp
