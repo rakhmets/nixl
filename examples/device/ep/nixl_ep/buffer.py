@@ -313,15 +313,13 @@ class Buffer:
 
         event = EventHandle._adopt_ptr(event_ptr) if event_ptr else None
 
-        tensors_to_record = (
+        tensors_to_record = Buffer._tensors_for_event_overlap(
             topk_idx,
             num_tokens_per_rank,
+            num_tokens_per_rdma_rank,
             num_tokens_per_expert,
             is_token_in_rank,
         )
-
-        if num_tokens_per_rdma_rank is not None:
-            tensors_to_record = (*tensors_to_record, num_tokens_per_rdma_rank)
 
         return (
             num_tokens_per_rank,
@@ -346,7 +344,11 @@ class Buffer:
         async_finish: bool = False,
         return_recv_hook: bool = False,
     ) -> Tuple[
-        Tuple[torch.Tensor, torch.Tensor], torch.Tensor, Tuple, EventOverlap, Callable
+        Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor],
+        torch.Tensor,
+        Tuple,
+        EventOverlap,
+        Optional[Callable],
     ]:
         """
         A low-latency implementation for dispatching with NIXL device API.
@@ -464,7 +466,7 @@ class Buffer:
         return_recv_hook: bool = False,
         out: Optional[torch.Tensor] = None,
         combine_wait_recv_cost_stats: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, EventOverlap, Callable]:
+    ) -> Tuple[torch.Tensor, EventOverlap, Optional[Callable]]:
         """
         A low-latency implementation for combining tokens (reduce **with weights**) with NIXL device API.
         This kernel requires all the ranks (no matter intranode or internode) should be visible via RDMA
@@ -543,7 +545,7 @@ class Buffer:
 
     @staticmethod
     def _tensors_for_event_overlap(
-        *tensors: Optional[torch.Tensor]
+        *tensors: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, ...]:
         return tuple(t for t in tensors if t is not None)
 
@@ -567,8 +569,8 @@ class Buffer:
         Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor],
         Optional[torch.Tensor],
         Optional[torch.Tensor],
-        List[int],
-        Tuple,
+        Optional[List[int]],
+        Optional[Tuple],
         EventOverlap,
     ]:
         """
@@ -623,7 +625,7 @@ class Buffer:
                 )
             )
             event = EventHandle._adopt_ptr(event_ptr) if event_ptr else None
-            tensors_to_record = _tensors_for_event_overlap(
+            tensors_to_record = Buffer._tensors_for_event_overlap(
                 x,
                 x_scales,
                 topk_idx,
@@ -698,7 +700,7 @@ class Buffer:
                 send_rdma_head,
                 send_nvl_head,
             )
-            tensors_to_record = _tensors_for_event_overlap(
+            tensors_to_record = Buffer._tensors_for_event_overlap(
                 # inputs read on comm_stream
                 x,
                 x_scales,
@@ -792,7 +794,7 @@ class Buffer:
             allocate_on_comm_stream,
         )
         event = EventHandle._adopt_ptr(event_ptr) if event_ptr else None
-        tensors_to_record = _tensors_for_event_overlap(
+        tensors_to_record = Buffer._tensors_for_event_overlap(
             x,
             topk_weights,
             bias_0,
@@ -860,7 +862,10 @@ class Buffer:
             hidden,
         ) = handle
         return torch.ops.nixl_ep.get_next_combine_buffer(
-            self.runtime._ptr(), num_max_dispatch_tokens_per_rank, hidden, layout_range.size(1)
+            self.runtime._ptr(),
+            num_max_dispatch_tokens_per_rank,
+            hidden,
+            layout_range.size(1),
         )
 
     def update_memory_buffers(
