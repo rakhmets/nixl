@@ -47,7 +47,7 @@ public:
 
     void
     current_stream_wait() const {
-        CUDA_CHECK(cudaStreamWaitEvent(at::cuda::getCurrentCUDAStream().stream(), event->get(), 0));
+        stream_wait(at::cuda::getCurrentCUDAStream());
     }
 
     void
