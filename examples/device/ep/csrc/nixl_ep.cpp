@@ -41,6 +41,7 @@
 #define NIXL_ETCD_WATCH_TIMEOUT std::chrono::microseconds(1000000000) // 1000 seconds
 
 namespace {
+
 void sleep_ms(int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
@@ -49,6 +50,7 @@ uint64_t milliseconds_to_cycles(uint64_t milliseconds, int device_clock_rate_khz
     EP_HOST_ASSERT(device_clock_rate_khz > 0);
     return milliseconds * static_cast<uint64_t>(device_clock_rate_khz);
 }
+
 } // namespace
 
 namespace nixl_ep {
