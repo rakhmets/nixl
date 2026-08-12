@@ -41,23 +41,13 @@
 #define NIXL_ETCD_WATCH_TIMEOUT std::chrono::microseconds(1000000000) // 1000 seconds
 
 namespace {
-void
-sleep_ms(int milliseconds) {
+void sleep_ms(int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-uint64_t
-milliseconds_to_cycles(uint64_t milliseconds, int device_clock_rate_khz) {
+uint64_t milliseconds_to_cycles(uint64_t milliseconds, int device_clock_rate_khz) {
     EP_HOST_ASSERT(device_clock_rate_khz > 0);
     return milliseconds * static_cast<uint64_t>(device_clock_rate_khz);
-}
-
-void
-stream_wait(const at::cuda::CUDAStream &stream_0, const at::cuda::CUDAStream &stream_1) {
-    EP_HOST_ASSERT(stream_0.id() != stream_1.id());
-    nixl_ep::cuda::Event event;
-    event.record(stream_1);
-    CUDA_CHECK(cudaStreamWaitEvent(stream_0, event.get(), 0));
 }
 } // namespace
 

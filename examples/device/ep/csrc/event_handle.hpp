@@ -58,4 +58,12 @@ public:
 private:
     std::shared_ptr<cuda::Event> event;
 };
+
+inline void
+stream_wait(const at::cuda::CUDAStream &stream_0, const at::cuda::CUDAStream &stream_1) {
+    EP_HOST_ASSERT(stream_0.id() != stream_1.id());
+    cuda::Event event;
+    event.record(stream_1);
+    CUDA_CHECK(cudaStreamWaitEvent(stream_0, event.get(), 0));
+}
 } // namespace nixl_ep
