@@ -274,6 +274,7 @@ torch::Tensor Buffer::get_local_buffer_tensor(const pybind11::object& dtype, int
 }
 
 int64_t Buffer::get_comm_stream() const {
+    EP_HOST_ASSERT(is_available() && "get_comm_stream() called before update_memory_buffers()");
     return reinterpret_cast<int64_t>(comm_stream);
 }
 
