@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "cuda_event.hpp"
 #include "kernels/exception.cuh"
 
 #include <torch/types.h>
@@ -24,6 +25,7 @@
 #include <cuda_runtime.h>
 
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace nixl_ep {
@@ -46,16 +48,27 @@ namespace detail {
     record_stream_impl(const std::vector<torch::Tensor> &tensors, cudaStream_t stream) {
         EP_HOST_ASSERT(!tensors.empty());
 
-        // The delete callback below is not safe under graph capture.
-        cudaStreamCaptureStatus capture_status = cudaStreamCaptureStatusNone;
+        // The deletion of the holder below is not safe under graph capture.
+        cudaStreamCaptureStatus capture_status;
         CUDA_CHECK(cudaStreamIsCapturing(stream, &capture_status));
         EP_HOST_ASSERT(capture_status == cudaStreamCaptureStatusNone);
 
+        // Keep links to rensors until the event is ready.
+        static std::vector<std::pair<cuda::Event, std::vector<torch::Tensor> *>> holders;
+        auto it = holders.begin();
+        while (it != holders.end()) {
+            if (it->first.is_ready()) {
+                delete it->second;
+                it = holders.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
         auto *holder = new std::vector<torch::Tensor>(tensors);
-        CUDA_CHECK(cudaLaunchHostFunc(
-            stream,
-            [](void *data) { delete static_cast<std::vector<torch::Tensor> *>(data); },
-            holder));
+        cuda::Event event;
+        event.record(stream);
+        holders.emplace_back(std::move(event), holder);
     }
 
 } // namespace detail
