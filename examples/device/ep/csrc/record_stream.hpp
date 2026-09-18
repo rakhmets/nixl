@@ -19,7 +19,7 @@
 
 #include "kernels/exception.cuh"
 
-#include <torch/types.h>
+#include <torch/csrc/stable/tensor.h>
 
 #include <cuda_runtime.h>
 
@@ -31,41 +31,39 @@ namespace nixl_ep {
 namespace detail {
 
     inline void
-    append_tensor(std::vector<torch::Tensor> &tensors, const torch::Tensor &tensor) {
+    append_tensor(std::vector<torch::stable::Tensor> &tensors,
+                  const torch::stable::Tensor &tensor) {
         tensors.push_back(tensor);
     }
 
     inline void
-    append_tensor(std::vector<torch::Tensor> &tensors, const std::optional<torch::Tensor> &tensor) {
+    append_tensor(std::vector<torch::stable::Tensor> &tensors,
+                  const std::optional<torch::stable::Tensor> &tensor) {
         if (tensor) {
             tensors.push_back(*tensor);
         }
     }
 
     inline void
-    record_stream_impl(const std::vector<torch::Tensor> &tensors, cudaStream_t stream) {
+    record_stream_impl(std::vector<torch::stable::Tensor> tensors, cudaStream_t stream) {
         EP_HOST_ASSERT(!tensors.empty());
-        auto *holder = new std::vector<torch::Tensor>(tensors);
+        auto *holder = new std::vector<torch::stable::Tensor>(std::move(tensors));
         CUDA_CHECK(cudaLaunchHostFunc(
             stream,
-            [](void *data) { delete static_cast<std::vector<torch::Tensor> *>(data); },
+            [](void *data) { delete static_cast<std::vector<torch::stable::Tensor> *>(data); },
             holder));
     }
 
 } // namespace detail
 
 // Emulates torch::Tensor::record_stream(). The method is not exposed in stable torch ABI.
-// This is an intermediate step of porting to stable torch ABI. It is required to get rid of
-// at::cuda::CUDAStream. And later we can swap torch::Tensor for torch::stable::Tensor.
 template<typename... Tensors>
 void
-record_stream(const std::vector<cudaStream_t> &streams, const Tensors &...tensors) {
-    std::vector<torch::Tensor> out;
+record_stream(cudaStream_t stream, const Tensors &...tensors) {
+    std::vector<torch::stable::Tensor> out;
     out.reserve(sizeof...(Tensors));
     (detail::append_tensor(out, tensors), ...);
-    for (cudaStream_t stream : streams) {
-        detail::record_stream_impl(out, stream);
-    }
+    detail::record_stream_impl(std::move(out), stream);
 }
 
 } // namespace nixl_ep
