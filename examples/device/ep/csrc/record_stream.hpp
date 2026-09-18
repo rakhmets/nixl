@@ -45,15 +45,13 @@ namespace detail {
     inline void
     record_stream_impl(const std::vector<torch::Tensor> &tensors, cudaStream_t stream) {
         EP_HOST_ASSERT(!tensors.empty());
-        auto *holder = new std::vector<torch::Tensor>(tensors);
 
-        // Leak the holder if the stream is capturing.
+        // The delete callback below is not safe under graph capture.
         cudaStreamCaptureStatus capture_status = cudaStreamCaptureStatusNone;
         CUDA_CHECK(cudaStreamIsCapturing(stream, &capture_status));
-        if (capture_status != cudaStreamCaptureStatusNone) {
-            return;
-        }
+        EP_HOST_ASSERT(capture_status == cudaStreamCaptureStatusNone);
 
+        auto *holder = new std::vector<torch::Tensor>(tensors);
         CUDA_CHECK(cudaLaunchHostFunc(
             stream,
             [](void *data) { delete static_cast<std::vector<torch::Tensor> *>(data); },
