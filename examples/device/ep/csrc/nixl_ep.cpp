@@ -73,8 +73,7 @@ Buffer::Buffer(int rank, bool explicitly_destroy, bool low_latency_mode, int tim
             return static_cast<uint64_t>(timeout_ms);
         }()),
         rank(rank),
-        explicitly_destroy(explicitly_destroy),
-        comm_stream(cuda_stream::get_from_pool()) {}
+        explicitly_destroy(explicitly_destroy) {}
 
 bool Buffer::_is_rank_connected(int rank_id) const {
     return rank_id == rank or std::find(remote_ranks.begin(), remote_ranks.end(), rank_id) != remote_ranks.end();
@@ -134,6 +133,7 @@ void Buffer::init(int num_ranks, int num_experts_per_rank, int64_t num_nvl_bytes
 
     // Get ranks
     CUDA_CHECK(cudaGetDevice(&device_id));
+    comm_stream = cuda_stream::get_from_pool();
     rdma_rank = rank / NUM_MAX_NVL_PEERS, nvl_rank = rank % NUM_MAX_NVL_PEERS;
     num_rdma_ranks = std::max(1, num_ranks / NUM_MAX_NVL_PEERS), num_nvl_ranks = std::min(num_ranks, NUM_MAX_NVL_PEERS);
 
