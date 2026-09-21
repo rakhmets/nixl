@@ -24,7 +24,6 @@
 
 #include "cuda_warn.hpp"
 #include "kernels/api.cuh"
-#include "record_stream.hpp"
 
 #include <pybind11/functional.h>
 
@@ -296,6 +295,8 @@ void Buffer::destroy() {
 
     // Synchronize
     warn_cuda(cudaDeviceSynchronize(), "synchronize device");
+
+    tensor_holders.clear();
 
     _nixl_ep_destroy();
 
@@ -590,12 +591,12 @@ Buffer::get_dispatch_layout(const torch::Tensor& topk_idx, int num_experts,
         if (allocate_on_comm_stream) {
             record_streams.push_back(compute_stream);
         }
-        record_stream(record_streams,
-                      topk_idx,
-                      num_tokens_per_rank,
-                      num_tokens_per_expert,
-                      is_token_in_rank,
-                      num_tokens_per_rdma_rank);
+        tensor_holders.record(record_streams,
+                              topk_idx,
+                              num_tokens_per_rank,
+                              num_tokens_per_expert,
+                              is_token_in_rank,
+                              num_tokens_per_rdma_rank);
     } else {
         stream_wait(compute_stream, comm_stream);
     }
@@ -863,32 +864,32 @@ Buffer::ht_dispatch(const torch::Tensor& x, const std::optional<torch::Tensor>& 
         if (allocate_on_comm_stream) {
             record_streams.push_back(compute_stream);
         }
-        record_stream(record_streams,
-                      x,
-                      is_token_in_rank,
-                      recv_x,
-                      rdma_channel_prefix_matrix,
-                      recv_rdma_rank_prefix_sum,
-                      gbl_channel_prefix_matrix,
-                      recv_gbl_rank_prefix_sum,
-                      x_scales,
-                      topk_idx,
-                      topk_weights,
-                      num_tokens_per_rank,
-                      num_tokens_per_rdma_rank,
-                      num_tokens_per_expert,
-                      cached_rdma_channel_prefix_matrix,
-                      cached_recv_rdma_rank_prefix_sum,
-                      cached_gbl_channel_prefix_matrix,
-                      cached_recv_gbl_rank_prefix_sum,
-                      recv_topk_idx,
-                      recv_topk_weights,
-                      recv_x_scales,
-                      recv_rdma_channel_prefix_matrix,
-                      recv_gbl_channel_prefix_matrix,
-                      send_rdma_head,
-                      send_nvl_head,
-                      recv_src_meta);
+        tensor_holders.record(record_streams,
+                              x,
+                              is_token_in_rank,
+                              recv_x,
+                              rdma_channel_prefix_matrix,
+                              recv_rdma_rank_prefix_sum,
+                              gbl_channel_prefix_matrix,
+                              recv_gbl_rank_prefix_sum,
+                              x_scales,
+                              topk_idx,
+                              topk_weights,
+                              num_tokens_per_rank,
+                              num_tokens_per_rdma_rank,
+                              num_tokens_per_expert,
+                              cached_rdma_channel_prefix_matrix,
+                              cached_recv_rdma_rank_prefix_sum,
+                              cached_gbl_channel_prefix_matrix,
+                              cached_recv_gbl_rank_prefix_sum,
+                              recv_topk_idx,
+                              recv_topk_weights,
+                              recv_x_scales,
+                              recv_rdma_channel_prefix_matrix,
+                              recv_gbl_channel_prefix_matrix,
+                              send_rdma_head,
+                              send_nvl_head,
+                              recv_src_meta);
     } else {
         stream_wait(compute_stream, comm_stream);
     }
@@ -1015,20 +1016,20 @@ Buffer::ht_combine(const torch::Tensor& x, const std::optional<torch::Tensor>& t
         if (allocate_on_comm_stream) {
             record_streams.push_back(compute_stream);
         }
-        record_stream(record_streams,
-                      x,
-                      src_meta,
-                      is_combined_token_in_rank,
-                      rdma_channel_prefix_matrix,
-                      rdma_rank_prefix_sum,
-                      gbl_channel_prefix_matrix,
-                      combined_x,
-                      combined_rdma_head,
-                      combined_nvl_head,
-                      topk_weights,
-                      combined_topk_weights,
-                      bias_0,
-                      bias_1);
+        tensor_holders.record(record_streams,
+                              x,
+                              src_meta,
+                              is_combined_token_in_rank,
+                              rdma_channel_prefix_matrix,
+                              rdma_rank_prefix_sum,
+                              gbl_channel_prefix_matrix,
+                              combined_x,
+                              combined_rdma_head,
+                              combined_nvl_head,
+                              topk_weights,
+                              combined_topk_weights,
+                              bias_0,
+                              bias_1);
     } else {
         stream_wait(compute_stream, comm_stream);
     }
