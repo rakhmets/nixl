@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import os
 from contextlib import contextmanager
 from datetime import timedelta
@@ -38,6 +39,13 @@ if TYPE_CHECKING:
 
 
 DEFAULT_TIMEOUT_MS = 30_000
+
+
+def _record_streams(
+    tensors: Tuple[Optional[torch.Tensor], ...], streams: List[torch.Stream]
+) -> None:
+    for tensor, stream in itertools.product(filter(None, tensors), streams):
+        tensor.record_stream(stream)
 
 
 class Buffer:
@@ -183,6 +191,12 @@ class Buffer:
             stream_ptr, device=self.runtime.get_local_device_id()
         )
 
+    def _record_streams_for(self, allocate_on_comm_stream: bool) -> List[torch.Stream]:
+        streams = [self.get_comm_stream()]
+        if allocate_on_comm_stream:
+            streams.append(torch.cuda.current_stream())
+        return streams
+
     def get_local_buffer_tensor(
         self,
         dtype: torch.dtype,
@@ -315,6 +329,17 @@ class Buffer:
             async_finish,
             allocate_on_comm_stream,
         )
+        if async_finish:
+            _record_streams(
+                (
+                    topk_idx,
+                    num_tokens_per_rank,
+                    num_tokens_per_expert,
+                    is_token_in_rank,
+                    num_tokens_per_rdma_rank,
+                ),
+                self._record_streams_for(allocate_on_comm_stream),
+            )
         return (
             num_tokens_per_rank,
             num_tokens_per_rdma_rank,
@@ -592,6 +617,21 @@ class Buffer:
                     allocate_on_comm_stream,
                 )
             )
+            if async_finish:
+                _record_streams(
+                    (
+                        x,
+                        x_scales,
+                        is_token_in_rank,
+                        recv_x,
+                        rdma_channel_prefix_matrix,
+                        gbl_channel_prefix_matrix,
+                        recv_rdma_rank_prefix_sum,
+                        recv_gbl_rank_prefix_sum,
+                        recv_x_scales,
+                    ),
+                    self._record_streams_for(allocate_on_comm_stream),
+                )
             return (recv_x, recv_x_scales) if x_scales is not None else recv_x, None, None, None, None, EventOverlap(event)  # type: ignore[return-value]
         else:
             assert (
@@ -636,6 +676,33 @@ class Buffer:
                 async_finish,
                 allocate_on_comm_stream,
             )
+            if async_finish:
+                _record_streams(
+                    (
+                        x,
+                        is_token_in_rank,
+                        recv_x,
+                        rdma_channel_prefix_matrix,
+                        recv_rdma_rank_prefix_sum,
+                        gbl_channel_prefix_matrix,
+                        recv_gbl_rank_prefix_sum,
+                        x_scales,
+                        topk_idx,
+                        topk_weights,
+                        num_tokens_per_rank,
+                        num_tokens_per_rdma_rank,
+                        num_tokens_per_expert,
+                        recv_topk_idx,
+                        recv_topk_weights,
+                        recv_x_scales,
+                        recv_rdma_channel_prefix_matrix,
+                        recv_gbl_channel_prefix_matrix,
+                        send_rdma_head,
+                        send_nvl_head,
+                        recv_src_meta,
+                    ),
+                    self._record_streams_for(allocate_on_comm_stream),
+                )
             handle = (
                 is_token_in_rank,
                 rdma_channel_prefix_matrix,
@@ -709,6 +776,25 @@ class Buffer:
             async_finish,
             allocate_on_comm_stream,
         )
+        if async_finish:
+            _record_streams(
+                (
+                    x,
+                    src_meta,
+                    is_combined_token_in_rank,
+                    rdma_channel_prefix_matrix,
+                    rdma_rank_prefix_sum,
+                    gbl_channel_prefix_matrix,
+                    combined_x,
+                    send_rdma_head,
+                    send_nvl_head,
+                    topk_weights,
+                    combined_topk_weights,
+                    bias_0,
+                    bias_1,
+                ),
+                self._record_streams_for(allocate_on_comm_stream),
+            )
         return combined_x, combined_topk_weights, EventOverlap(event)
 
     def update_mask_buffer(self, rank_to_mask: int, mask: bool = False):

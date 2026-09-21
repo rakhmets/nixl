@@ -64,7 +64,6 @@ endif
 nixl_ep_sources = [
     'csrc/cuda_stream.cpp',
     'csrc/nixl_ep.cpp',
-    'csrc/tensor_holders.cpp',
     'csrc/vmm.cpp',
     'csrc/kernels/nixl_ep_ll.cu',
     'csrc/kernels/nixl_ep_ht.cu',

@@ -31,7 +31,6 @@
 #include "event_handle.hpp"
 #include "kernels/configs.cuh"
 #include "kernels/exception.cuh"
-#include "tensor_holders.hpp"
 #include "vmm.hpp"
 
 #include <nixl.h>
@@ -137,8 +136,6 @@ private:
 
     // Stream for communication
     cudaStream_t comm_stream;
-
-    TensorHolders tensor_holders;
 
     // After synchronization, this flag will be true
     bool available = false;
