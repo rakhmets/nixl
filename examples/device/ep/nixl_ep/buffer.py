@@ -44,7 +44,8 @@ DEFAULT_TIMEOUT_MS = 30_000
 def _record_streams(
     tensors: Tuple[Optional[torch.Tensor], ...], streams: List[torch.Stream]
 ) -> None:
-    for tensor, stream in itertools.product(filter(None, tensors), streams):
+    live_tensors = [tensor for tensor in tensors if tensor is not None]
+    for tensor, stream in itertools.product(live_tensors, streams):
         tensor.record_stream(stream)
 
 
