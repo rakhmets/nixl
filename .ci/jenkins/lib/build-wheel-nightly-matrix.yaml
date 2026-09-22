@@ -119,14 +119,9 @@ steps:
       set -x
       # spcx and Infinia are always bundled in the nightly; the built source
       # ref's build-container.sh pins the plugin ref/image.
-      # The two CUDA majors have different torch coverage: 2.11 is not available
-      # on the cu13 index, and 2.14 is not available on the cu12 one.
       BASE_IMAGE_FLAGS=""
       if [ "${CUDA_MAJOR}" = "12" ]; then
         BASE_IMAGE_FLAGS="--base-image ${CU12_BASE_IMAGE} --base-image-tag ${CU12_BASE_TAG} --cuda-version ${CU12_CUDA_VERSION}"
-        TORCH_VERSIONS="2.11,2.12,2.13"
-      else
-        TORCH_VERSIONS="2.12,2.13,2.14"
       fi
       cd nixl-src
       ./contrib/build-container.sh \
@@ -134,7 +129,6 @@ steps:
         --wheel-base "manylinux_${manylinux}" \
         --python-versions "${python_version}" \
         --arch ${arch} \
-        --torch-versions "${TORCH_VERSIONS}" \
         --tag "${WHEEL_IMAGE_TAG}" \
         --dockerfile contrib/Dockerfile.manylinux \
         --build-ucx-spcx-plugin \

@@ -191,7 +191,6 @@ env:
   # the "CI_MANAGED" placeholder must not be hand-edited.
   CI_IMAGE_TAG: "CI_MANAGED"
   WHL_BASE: "manylinux_2_28"
-  TORCH_VERSIONS: "2.13"
   WHEEL_BASE_IMAGE_NAME: "nixl-wheel-base-cu13-manylinux_2_28"
   # Per-PR sanity images: <registry_host><registry_path>/pr/<arch>/<fw>-nixl:<BUILD_NUMBER>
   PR_REGISTRY: "${registry_host}${registry_path}"
@@ -282,7 +281,6 @@ steps:
         --wheel-base "${WHL_BASE}" \
         --python-versions "${python_version}" \
         --arch ${arch} \
-        --torch-versions "${TORCH_VERSIONS}" \
         --dockerfile contrib/Dockerfile.manylinux \
         --wheel-base-image "${registry_host}${registry_path}/${arch}/${WHEEL_BASE_IMAGE_NAME}:${CI_IMAGE_TAG}"
 
