@@ -464,39 +464,6 @@ __forceinline__ __device__ out_dtype_t extract_required_scale_format(float value
     }
 }
 
-template <int kNumRanks, bool kSyncOnly = false>
-__forceinline__ __device__ void
-barrier_block(int** barrier_signal_ptrs, int rank, uint64_t timeout_cycles) {
-    auto thread_id = static_cast<int>(threadIdx.x);
-
-    // For non-sync-only cases, the memory operations by other threads in the block must be visible to the `sys` scope
-    if constexpr (not kSyncOnly) {
-        memory_fence();
-        __syncthreads();
-    }
-
-    // Add self-ranks, sub other ranks
-    if (thread_id < kNumRanks) {
-        atomicAdd_system(barrier_signal_ptrs[rank] + thread_id, FINISHED_SUM_TAG);
-        atomicSub_system(barrier_signal_ptrs[thread_id] + rank, FINISHED_SUM_TAG);
-    }
-    EP_DEVICE_ASSERT(kNumRanks <= blockDim.x);
-
-    // Check timeout
-    auto start_time = clock64();
-    while (true) {
-        auto value = thread_id < kNumRanks ? ld_volatile_global(barrier_signal_ptrs[rank] + thread_id) : 0;
-        if (__all_sync(0xffffffff, value <= 0))
-            break;
-
-        if (clock64() - start_time > timeout_cycles and thread_id < kNumRanks) {
-            printf("NixlEP timeout check failed: rank = %d, thread = %d, value = %d)\n", rank, thread_id, value);
-            trap();
-        }
-    }
-    __syncthreads();
-}
-
 __forceinline__ __device__ int atomic_cas_cta_acquire(int* addr, int x, int y) {
     int ret;
     asm volatile("atom.acquire.cta.shared::cta.cas.b32 %0, [%1], %2, %3;" : "=r"(ret) : "l"(addr), "r"(x), "r"(y) : "memory");
