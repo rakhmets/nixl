@@ -33,9 +33,6 @@ from . import nixl_ep_cpp
 from .nixl_ep_cpp import EventHandle
 from .utils import EventOverlap
 
-if TYPE_CHECKING:
-    import mpi4py  # noqa: F401
-
 
 DEFAULT_TIMEOUT_MS = 30_000
 

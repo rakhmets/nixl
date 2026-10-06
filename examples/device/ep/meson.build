@@ -138,12 +138,6 @@ if get_option('buildtype') == 'debug'
     nixl_ep_cpp_args += ['-g']
 endif
 
-enable_fast_debug = get_option('buildtype') != 'release'
-
-if enable_fast_debug
-    nixl_ep_cuda_args += ['-DENABLE_FAST_DEBUG']
-endif
-
 nixl_ep_install_rpath = join_paths(get_option('prefix'), get_option('libdir'))
 nixl_ep_install_rpath += ':' + join_paths(get_option('prefix'), get_option('libdir'), 'plugins')
 nixl_ep_install_rpath += ':' + torch_lib_dir
