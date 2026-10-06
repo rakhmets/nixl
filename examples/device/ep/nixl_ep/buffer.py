@@ -56,7 +56,6 @@ class Buffer:
         disable_ll_nvlink: bool = False,
         explicitly_destroy: bool = False,
         rank: int = 0,
-        low_latency_mode: bool = True,
         group: Optional[dist.ProcessGroup] = None,
         comm: Optional["mpi4py.MPI.Comm"] = None,
         tcp_store_group: Optional[dist.TCPStore] = None,
@@ -71,7 +70,6 @@ class Buffer:
                 otherwise, the resources will be released by the destructor.
                 Note: Releasing resources in the destructor may cause Python's exception handling process to hang.
             rank: the rank number.
-            low_latency_mode: kept for API compatibility; low-latency is the only supported mode and must be True.
             group: the communication group (optional).
             comm: the mpi4py.MPI.Comm communicator to use in case the group parameter is absent (optional).
             tcp_store_group: TCPStore for metadata exchange (optional).
@@ -88,7 +86,6 @@ class Buffer:
         self.comm = comm
         self.tcp_store_group = tcp_store_group
         assert not (group and comm)
-        assert low_latency_mode, "High-throughput mode is no longer supported"
 
         if disable_ll_nvlink:
             os.environ["UCX_TLS"] = "^cuda_ipc"
@@ -130,7 +127,7 @@ class Buffer:
 
         Arguments:
             num_max_dispatch_tokens_per_rank: the maximum number of tokens to dispatch, all the ranks must hold the same value.
-                `num_ranks * num_max_dispatch_tokens_per_rank` must be a multiple of 4 to match `low_latency_dispatch()`.
+                `num_ranks * num_max_dispatch_tokens_per_rank` must be a multiple of 4 to match `dispatch()`.
             hidden: the hidden dimension of each token.
             num_ranks: rank capacity used to size the low-latency buffers.
             num_experts: expert capacity, normally num_ranks * num_experts_per_rank.
