@@ -21,7 +21,7 @@
 import os
 from contextlib import contextmanager
 from datetime import timedelta
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import torch
 import torch.distributed as dist
@@ -32,7 +32,6 @@ from . import nixl_ep_cpp
 # noinspection PyUnresolvedReferences
 from .nixl_ep_cpp import EventHandle
 from .utils import EventOverlap
-
 
 DEFAULT_TIMEOUT_MS = 30_000
 
@@ -53,8 +52,6 @@ class Buffer:
         disable_ll_nvlink: bool = False,
         explicitly_destroy: bool = False,
         rank: int = 0,
-        group: Optional[dist.ProcessGroup] = None,
-        comm: Optional["mpi4py.MPI.Comm"] = None,
         tcp_store_group: Optional[dist.TCPStore] = None,
         timeout_ms: int = DEFAULT_TIMEOUT_MS,
     ) -> None:
@@ -67,8 +64,6 @@ class Buffer:
                 otherwise, the resources will be released by the destructor.
                 Note: Releasing resources in the destructor may cause Python's exception handling process to hang.
             rank: the rank number.
-            group: the communication group (optional).
-            comm: the mpi4py.MPI.Comm communicator to use in case the group parameter is absent (optional).
             tcp_store_group: TCPStore for metadata exchange (optional).
             timeout_ms: GPU kernel timeout in milliseconds.
                 A timeout marks the rank invalid and masks it out.
@@ -79,10 +74,7 @@ class Buffer:
         self.timeout_ms = timeout_ms
 
         self.explicitly_destroy = explicitly_destroy
-        self.group = group
-        self.comm = comm
         self.tcp_store_group = tcp_store_group
-        assert not (group and comm)
 
         if disable_ll_nvlink:
             os.environ["UCX_TLS"] = "^cuda_ipc"
