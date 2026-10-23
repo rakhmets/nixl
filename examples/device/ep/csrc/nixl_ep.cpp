@@ -182,10 +182,9 @@ combine_py(nixl_ep::Buffer &self,
 pybind11::object
 get_local_buffer_tensor_py(const nixl_ep::Buffer &self,
                            const pybind11::object &dtype_carrier,
-                           int64_t offset,
-                           bool use_rdma_buffer) {
+                           int64_t offset) {
     return tensor_to_py(self.get_local_buffer_tensor(
-        tensor_from_py(dtype_carrier).scalar_type(), offset, use_rdma_buffer));
+        tensor_from_py(dtype_carrier).scalar_type(), offset));
 }
 
 pybind11::object
@@ -341,7 +340,7 @@ int Buffer::get_local_device_id() const {
     return device_id;
 }
 
-torch::stable::Tensor Buffer::get_local_buffer_tensor(torch::headeronly::ScalarType dtype, int64_t offset, bool use_rdma_buffer) const {
+torch::stable::Tensor Buffer::get_local_buffer_tensor(torch::headeronly::ScalarType dtype, int64_t offset) const {
     const int64_t element_bytes = scalar_type_element_size(dtype);
     auto base_ptr = static_cast<uint8_t*>(rdma_buffer_ptr) + offset;
     const int64_t sizes[] = {num_rdma_bytes / element_bytes};
@@ -555,7 +554,7 @@ void Buffer::disconnect_ranks(const std::vector<int>& remote_ranks_list) {
     _nixl_ep_memory_views_commit();
 }
 
-std::tuple<torch::stable::Tensor, std::optional<torch::stable::Tensor>, torch::stable::Tensor, torch::stable::Tensor, torch::stable::Tensor, int64_t>
+std::tuple<torch::stable::Tensor, std::optional<torch::stable::Tensor>, torch::stable::Tensor, torch::stable::Tensor, torch::stable::Tensor, std::optional<EventHandle>, std::optional<std::function<void()>>>
 Buffer::dispatch(const torch::stable::Tensor &x, const torch::stable::Tensor &topk_idx,
                              const std::optional<torch::stable::Tensor> &cumulative_local_expert_recv_stats,
                              const std::optional<torch::stable::Tensor> &dispatch_wait_recv_cost_stats,
@@ -573,7 +572,6 @@ Buffer::dispatch(const torch::stable::Tensor &x, const torch::stable::Tensor &to
     const int num_max_recv_tokens = rank_bound * num_max_dispatch_tokens_per_rank;
     EP_HOST_ASSERT(num_max_recv_tokens % 4 == 0 and "TMA requires the number of tokens to be multiple of 4");
     EP_HOST_ASSERT(not (async and return_recv_hook));
-    EP_HOST_ASSERT(not return_recv_hook or pending_dispatch_recv_hook == nullptr);
 
     // Diagnosis tensors
     if (cumulative_local_expert_recv_stats.has_value()) {
@@ -668,30 +666,25 @@ Buffer::dispatch(const torch::stable::Tensor &x, const torch::stable::Tensor &to
     launcher(return_recv_hook ? EP_SEND_PHASE : (EP_SEND_PHASE | EP_RECV_PHASE));
 
     // Wait streams
-    const EventHandle *event = nullptr;
+    std::optional<EventHandle> event;
     if (async) {
         // NOTES: we must ensure the all tensors will not be deallocated before the stream-wait happens,
         // so in Python API, we must wrap all tensors into the event handle.
-        event = new EventHandle(launch_stream);
+        event = EventHandle(launch_stream);
     } else if (not return_recv_hook) {
         stream_wait(compute_stream, launch_stream);
     }
 
-    if (return_recv_hook) {
-        pending_dispatch_recv_hook = [=, this]() { launcher(EP_RECV_PHASE); };
-    }
+    // Receiver callback
+    std::optional<std::function<void()>> recv_hook = std::nullopt;
+    if (return_recv_hook)
+        recv_hook = [=]() { launcher(EP_RECV_PHASE); };
 
-    return {packed_recv_x, packed_recv_x_scales, packed_recv_count, packed_recv_src_info, packed_recv_layout_range, reinterpret_cast<int64_t>(event)};
+    // Return values
+    return {packed_recv_x, packed_recv_x_scales, packed_recv_count, packed_recv_src_info, packed_recv_layout_range, event, recv_hook};
 }
 
-void
-Buffer::run_dispatch_recv_hook() {
-    EP_HOST_ASSERT(pending_dispatch_recv_hook != nullptr);
-    pending_dispatch_recv_hook();
-    pending_dispatch_recv_hook = nullptr;
-}
-
-std::tuple<torch::stable::Tensor, int64_t>
+std::tuple<torch::stable::Tensor, std::optional<EventHandle>, std::optional<std::function<void()>>>
 Buffer::combine(const torch::stable::Tensor& x, const torch::stable::Tensor& topk_idx, const torch::stable::Tensor& topk_weights,
                             const torch::stable::Tensor& src_info, const torch::stable::Tensor& layout_range,
                             const std::optional<torch::stable::Tensor>& combine_wait_recv_cost_stats,
@@ -719,7 +712,6 @@ Buffer::combine(const torch::stable::Tensor& x, const torch::stable::Tensor& top
     EP_HOST_ASSERT(src_info.scalar_type() == torch::headeronly::ScalarType::Int and x.size(0) == src_info.size(0));
     EP_HOST_ASSERT(src_info.size(1) == rank_bound * num_max_dispatch_tokens_per_rank);
     EP_HOST_ASSERT(not (async and return_recv_hook));
-    EP_HOST_ASSERT(not return_recv_hook or pending_combine_recv_hook == nullptr);
 
     if (combine_wait_recv_cost_stats.has_value()) {
         EP_HOST_ASSERT(combine_wait_recv_cost_stats->scalar_type() == torch::headeronly::ScalarType::Long);
@@ -778,27 +770,22 @@ Buffer::combine(const torch::stable::Tensor& x, const torch::stable::Tensor& top
     launcher(return_recv_hook ? EP_SEND_PHASE : (EP_SEND_PHASE | EP_RECV_PHASE));
 
     // Wait streams
-    const EventHandle *event = nullptr;
+    std::optional<EventHandle> event;
     if (async) {
         // NOTES: we must ensure the all tensors will not be deallocated before the stream-wait happens,
         // so in Python API, we must wrap all tensors into the event handle.
-        event = new EventHandle(launch_stream);
+        event = EventHandle(launch_stream);
     } else if (not return_recv_hook) {
         stream_wait(compute_stream, launch_stream);
     }
 
-    if (return_recv_hook) {
-        pending_combine_recv_hook = [=, this]() { launcher(EP_RECV_PHASE); };
-    }
+    // Receiver callback
+    std::optional<std::function<void()>> recv_hook = std::nullopt;
+    if (return_recv_hook)
+        recv_hook = [=]() { launcher(EP_RECV_PHASE); };
 
-    return {combined_x, reinterpret_cast<int64_t>(event)};
-}
-
-void
-Buffer::run_combine_recv_hook() {
-    EP_HOST_ASSERT(pending_combine_recv_hook != nullptr);
-    pending_combine_recv_hook();
-    pending_combine_recv_hook = nullptr;
+    // Return values
+    return {combined_x, event, recv_hook};
 }
 
 torch::stable::Tensor
@@ -1085,15 +1072,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
     pybind11::class_<nixl_ep::EventHandle>(m, "EventHandle")
         .def(pybind11::init<>())
-        .def("current_stream_wait", &nixl_ep::EventHandle::current_stream_wait)
-        .def("_ptr", [](nixl_ep::EventHandle &self) { return reinterpret_cast<int64_t>(&self); })
-        .def_static("_adopt_ptr", [](int64_t ptr) {
-            EP_HOST_ASSERT(ptr != 0);
-            auto *raw = reinterpret_cast<nixl_ep::EventHandle *>(ptr);
-            nixl_ep::EventHandle handle = std::move(*raw);
-            delete raw;
-            return handle;
-        });
+        .def("current_stream_wait", &nixl_ep::EventHandle::current_stream_wait);
 
     pybind11::class_<nixl_ep::Buffer>(m, "Buffer")
         .def(pybind11::init<int, bool, int>())
@@ -1117,10 +1096,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         .def("get_local_metadata",
              [](const nixl_ep::Buffer &buffer) -> pybind11::bytes {
                  return pybind11::bytes(buffer.get_local_metadata());
-             })
-        .def("run_dispatch_recv_hook", &nixl_ep::Buffer::run_dispatch_recv_hook)
-        .def("run_combine_recv_hook", &nixl_ep::Buffer::run_combine_recv_hook)
-        .def("_ptr", [](nixl_ep::Buffer &self) { return reinterpret_cast<int64_t>(&self); });
+             });
     m.attr("topk_idx_bits") = TOPK_IDX_BITS;
     m.def("is_sm90_compiled", nixl_ep::is_sm90_compiled);
 }
