@@ -90,10 +90,10 @@ class nixlAgentData final : public nixlMetadataContext {
         }
         [[nodiscard]] nixl_status_t
         loadRemoteMD(const nixl_blob_t &blob, std::string &out_name) override;
-        nixl_status_t
+        void
         invalidateRemoteMD(const std::string &remote_name) override;
 
-        nixl_status_t
+        void
         invalidateRemoteMDLocked(const std::string &remote_name);
 
         nixl_status_t

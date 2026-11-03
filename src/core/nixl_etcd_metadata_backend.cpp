@@ -308,13 +308,7 @@ public:
         for (const auto &agent : tmp_invalidated_agents) {
             NIXL_DEBUG << "Invalidated agent: " << agent;
             agentWatchers_.erase(agent);
-            const nixl_status_t ret = ctx.invalidateRemoteMD(agent);
-            if (ret != NIXL_SUCCESS) {
-                NIXL_ERROR << "Failed to invalidate remote metadata for agent: " << agent << ": "
-                           << ret;
-            } else {
-                NIXL_DEBUG << "Successfully invalidated remote metadata for agent: " << agent;
-            }
+            ctx.invalidateRemoteMD(agent);
         }
     }
 };

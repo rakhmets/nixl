@@ -67,7 +67,7 @@ public:
     loadRemoteMD(const nixl_blob_t &blob, std::string &out_name) = 0;
 
     /** Evict a remote agent's cached metadata (used by inbound INVL / watches). */
-    virtual nixl_status_t
+    virtual void
     invalidateRemoteMD(const std::string &remote_name) = 0;
 };
 

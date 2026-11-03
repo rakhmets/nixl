@@ -402,7 +402,6 @@ TEST_F(MetadataExchangeTestFixture, LoadRemoteAfterSectionError) {
 
         // The failed load drops the remote agent, so there is nothing left to invalidate
         ASSERT_EQ(dst.agent->checkRemoteMD(src.name, {DRAM_SEG}), NIXL_ERR_NOT_FOUND);
-        ASSERT_EQ(dst.agent->invalidateRemoteMD(src.name), NIXL_ERR_NOT_FOUND);
     };
 
     // Case 1: Remote agent not loaded before. The failed load must not leave a

@@ -1878,25 +1878,23 @@ nixlAgent::loadRemoteMD(const nixl_blob_t &remote_metadata, std::string &agent_n
 // Evicts a peer from both per-remote maps and disconnects the backends that were
 // connected to it. Called by the public method and, through the metadata context,
 // by backends acting on an inbound invalidation (P2P INVL, etcd watch).
-nixl_status_t
+void
 nixlAgentData::invalidateRemoteMD(const std::string &remote_agent) {
     // name_ is fixed at construction, so this needs no lock.
     if (remote_agent == name_) {
-        NIXL_ERROR_FUNC << "remote agent same as local agent, cannot invalidate local metadata";
-        return NIXL_ERR_INVALID_PARAM;
+        NIXL_WARN << "remote agent same as local agent, cannot invalidate local metadata";
+        return;
     }
 
     NIXL_LOCK_GUARD(lock);
-    return invalidateRemoteMDLocked(remote_agent);
+    invalidateRemoteMDLocked(remote_agent);
 }
 
-nixl_status_t
+void
 nixlAgentData::invalidateRemoteMDLocked(const std::string &remote_agent) {
-    nixl_status_t ret = NIXL_SUCCESS;
     if (remoteSections_.erase(remote_agent) == 0) {
         NIXL_INFO << __FUNCTION__ << ": remote metadata for agent '" << remote_agent
                   << "' not found.";
-        ret = NIXL_ERR_NOT_FOUND;
     }
 
     const auto rb_it = remoteBackends_.find(remote_agent);
@@ -1904,15 +1902,13 @@ nixlAgentData::invalidateRemoteMDLocked(const std::string &remote_agent) {
         for (const auto &[backend, conn_info] : rb_it->second) {
             const nixl_status_t status = backendEngines_[backend]->disconnect(remote_agent);
             if (status != NIXL_SUCCESS) {
-                NIXL_ERROR_FUNC << "backend '" << backend << "' failed to disconnect from agent '"
-                                << remote_agent << "' with status " << status;
-                ret = status;
+                NIXL_WARN << "backend '" << backend << "' failed to disconnect from agent '"
+                          << remote_agent << "' with status " << status;
             }
         }
 
         remoteBackends_.erase(rb_it);
     }
-    return ret;
 }
 
 // Relocated from the former nixl_listener.cpp (shared cache helpers used by the
@@ -1978,7 +1974,8 @@ nixlAgentData::loadRemoteSections(const std::string &remote_name, nixlSerDes &sd
 
 nixl_status_t
 nixlAgent::invalidateRemoteMD(const std::string &remote_agent) {
-    return data->invalidateRemoteMD(remote_agent);
+    data->invalidateRemoteMD(remote_agent);
+    return NIXL_SUCCESS;
 }
 
 nixl_status_t

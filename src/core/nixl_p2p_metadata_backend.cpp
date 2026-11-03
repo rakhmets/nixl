@@ -446,7 +446,7 @@ nixlP2PMetadataBackend::readIncoming() {
                 }
             } else if (header == "INVL") {
                 // No break: the rest of this batch is still ours to dispatch.
-                (void)ctx_.invalidateRemoteMD(std::string(command.substr(4)));
+                ctx_.invalidateRemoteMD(std::string(command.substr(4)));
             } else {
                 NIXL_ERROR << "Received socket message with bad header " << header << " from peer "
                            << socket_iter->first.first << ":" << socket_iter->first.second;
