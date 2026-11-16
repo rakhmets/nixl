@@ -147,14 +147,6 @@ get_options() {
                 missing_requirement $1
             fi
             ;;
-        --torch-versions)
-            if [ "$2" ]; then
-                WHL_TORCH_VERSIONS=$2
-                shift
-            else
-                missing_requirement $1
-            fi
-            ;;
         --cuda-version)
             if [ "$2" ]; then
                 CUDA_VERSION=$2
@@ -411,7 +403,6 @@ show_help() {
     echo "  [--ucx-spcx-plugin-install directory holding a pre-built plugin module to install instead of building one (implies --build-ucx-spcx-plugin; no gitlab credentials needed)]"
     echo "  [--arch [x86_64|aarch64] to select target architecture]"
     echo "  [--dockerfile path to a dockerfile to use]"
-    echo "  [--torch-versions torch versions to build for, comma separated (default: uses Dockerfile ARG default)]"
     echo "  [--cuda-version CUDA MAJOR.MINOR for the manylinux wheel build, e.g. 12.9 (default: ${CUDA_VERSION_DEFAULT})]
   [--torch-cuda-index torch wheel index for the manylinux wheel build (default: cu132 for CUDA 13, cu<CUDA_VERSION> for CUDA 12)]
   [--manylinux-image PyPA manylinux image prefix (default: ${MANYLINUX_IMAGE})]
@@ -446,7 +437,6 @@ BUILD_ARGS+="${BASE_IMAGE_TAG:+ --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG}"
 BUILD_ARGS+=" --build-arg MANYLINUX_IMAGE=$MANYLINUX_IMAGE --build-arg MANYLINUX_IMAGE_TAG=$MANYLINUX_IMAGE_TAG"
 BUILD_ARGS+=" --build-arg WHL_PYTHON_VERSIONS=$WHL_PYTHON_VERSIONS"
 BUILD_ARGS+="${DEFAULT_PYTHON_VERSION:+ --build-arg DEFAULT_PYTHON_VERSION=$DEFAULT_PYTHON_VERSION}"
-BUILD_ARGS+="${WHL_TORCH_VERSIONS:+ --build-arg WHL_TORCH_VERSIONS=$WHL_TORCH_VERSIONS}"
 CUDA_VERSION="${CUDA_VERSION:-$CUDA_VERSION_DEFAULT}"
 BUILD_ARGS+=" --build-arg CUDA_VERSION=$CUDA_VERSION"
 BUILD_ARGS+="${TORCH_CUDA_INDEX:+ --build-arg TORCH_CUDA_INDEX=$TORCH_CUDA_INDEX}"
